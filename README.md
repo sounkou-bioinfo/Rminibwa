@@ -7,6 +7,11 @@ backend using the `RsimdDispatch` approach.
 Current state: scaffold plus CLI wrappers. Native library bindings and dynamic
 SIMD dispatch are intentionally still design work.
 
+Design decision: even though SSE4.2 is common on modern x86_64, the native path
+will still follow the `RsimdDispatch` package and use `SIMDe`-backed runtime
+selection. That gives us a portable fallback, explicit backend reporting, and a
+cleaner route to ARM/NEON and wasm experiments.
+
 ## CLI usage
 
 ```r
@@ -34,10 +39,10 @@ export RMINIBWA_MINIBWA=$PWD/.local/bin/minibwa
 
 ## Shape discussion
 
-See [`docs/shape.md`](docs/shape.md). Short version:
+See [`docs/shape.md`](docs/shape.md) and [`docs/simde-dispatch.md`](docs/simde-dispatch.md). Short version:
 
 - ship a CLI-compatible layer first;
 - add native C bindings around `mb_idx_load()`, `mb_map()`, and
   `mb_map_batch()` next;
-- isolate the SIMD-sensitive KSW alignment kernels for runtime dispatch rather
-  than rewriting minibwa.
+- isolate the SIMD-sensitive KSW alignment kernels for `SIMDe` + runtime
+  dispatch rather than rewriting minibwa.

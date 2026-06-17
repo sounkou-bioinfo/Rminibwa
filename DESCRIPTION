@@ -10,11 +10,12 @@ Authors@R: c(
 Description: Provides an R-facing home for experiments around the 'minibwa'
     short-read aligner. The initial package exposes small wrappers around the
     'minibwa' command line interface while documenting the intended native C API
-    and runtime Single Instruction Multiple Data ('SIMD') dispatch shape for a
-    future library-backed implementation.
+    and 'SIMDe'-backed runtime Single Instruction Multiple Data ('SIMD')
+    dispatch shape for a future library-backed implementation.
 License: MIT + file LICENSE
-SystemRequirements: minibwa CLI for command-line wrappers; zlib and a C compiler for future native builds
+SystemRequirements: minibwa CLI for command-line wrappers; zlib, GNU make, and a C compiler for future native builds
 Suggests:
+    RsimdDispatch,
     roxygen2,
     tinytest
 Encoding: UTF-8

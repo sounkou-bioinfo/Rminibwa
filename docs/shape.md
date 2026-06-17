@@ -4,6 +4,13 @@ This repository is a home for an R-facing `minibwa` integration, not a rewrite o
 `minibwa`. The goal is to reuse Heng Li's upstream C code and expose it through
 R in a way that can also exercise our runtime SIMD dispatch framework.
 
+## SIMD decision
+
+We will follow the `RsimdDispatch` design and use `SIMDe`-backed runtime SIMD
+selection even though SSE4.2 is common on current x86_64 machines. The point is
+not only speed; it is portability, explicit backend diagnostics, controlled
+fallback behavior, and a cleaner path to ARM/NEON and wasm/webR builds.
+
 ## Initial layers
 
 1. **CLI layer first**
@@ -22,6 +29,8 @@ R in a way that can also exercise our runtime SIMD dispatch framework.
 3. **Runtime SIMD dispatch layer**
    - Start by isolating the alignment kernels (`ksw2_extz2_sse.c`,
      `ksw2_extd2_sse.c`, `ksw2_ll_sse.c`) behind a small operation table.
+   - Convert the upstream SSE/NEON include layer to `SIMDe` so the same kernel
+     source can produce a portable fallback and native backend objects.
    - Compile only those SIMD-sensitive translation units per backend where
      possible; keep index loading, seeding, chaining, formatting, and R glue
      baseline-compiled once.
@@ -72,16 +81,16 @@ That is close to PAF and easy to compare against CLI output.
 - Keep patches as named files under `tools/patches/`; do not silently edit
   vendored C.
 
-## SIMD questions to resolve
+## SIMD implementation questions to resolve
 
-- Do we need a scalar fallback for CRAN/HPC portability, or is the upstream
-  SSE4.2/NEON requirement acceptable?
+- What should we call the portable SIMDe fallback: `portable`, `scalar`, or
+  `simde`?
 - Should dispatch happen only at the KSW alignment kernels, or at a larger
   `mb_map_batch()` backend boundary?
-- Can we convert the SSE/NEON compatibility layer to SIMDe to get cleaner wasm
-  and portable fallback behavior?
-- Which backend names should R expose: `host`, `sse2`, `sse41`, `neon`,
-  `wasm128`, `scalar`?
+- Which backend names should R expose: `portable`, `sse2`, `sse41`, `sse42`,
+  `neon`, `wasm128`?
+- Do the KSW kernels benefit from an AVX2-named backend, or are they purely
+  SSE-width operations where AVX2 would only be metadata noise?
 - Should the native API emit text identical to CLI formatting, structured R
   records, or both?
 
