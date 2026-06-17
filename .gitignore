@@ -1,0 +1,16 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.tar.gz
+*.Rcheck
+.Rcheck
+.Rproj
+.DS_Store
+.sync/
+.local/
+/src/*.o
+/src/*.so
+/src/*.dll
+/src/Makevars
+/src/Makevars.win

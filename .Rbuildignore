@@ -1,0 +1,12 @@
+^.*\\.Rproj$
+^\\.Rproj\\.user$
+^\\.git$
+^\\.github$
+^\\.sync$
+^\\.local$
+^Makefile$
+^docs/.*\\.md$
+^tools/fetch-minibwa\\.sh$
+^tools/build-minibwa-cli\\.sh$
+^.*\\.tar\\.gz$
+^.*\\.Rcheck$
