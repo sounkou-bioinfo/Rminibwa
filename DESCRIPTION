@@ -13,11 +13,14 @@ Description: Provides an R-facing home for experiments around the 'minibwa'
     and 'SIMDe'-backed runtime Single Instruction Multiple Data ('SIMD')
     dispatch shape for a future library-backed implementation.
 License: MIT + file LICENSE
-SystemRequirements: minibwa CLI for command-line wrappers; zlib, GNU make, and a C compiler for future native builds
+SystemRequirements: GNU make, zlib
 Suggests:
+    knitr,
+    rmarkdown,
     RsimdDispatch,
     roxygen2,
     tinytest
+VignetteBuilder: knitr
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3

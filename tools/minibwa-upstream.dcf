@@ -1,0 +1,10 @@
+Component: minibwa
+Version: 0.1-r363
+Repository: https://github.com/lh3/minibwa
+GitRepository: https://github.com/lh3/minibwa.git
+Commit: 0a3421434f9dbab4def012aef37946e8a9fc08f8
+Date: 2026-06-17
+ArchiveURL: https://github.com/lh3/minibwa/archive/0a3421434f9dbab4def012aef37946e8a9fc08f8.tar.gz
+PatchDirectory: tools/patches/minibwa
+PatchPolicy: apply patches in lexical order after unpacking or checkout
+License: MIT; optional low-memory BWT builder includes GPL components, so Rminibwa defaults to gpl=0 for developer CLI builds

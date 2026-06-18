@@ -1,0 +1,87 @@
+---
+title: "SIMDe Dispatch Design"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{SIMDe Dispatch Design}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+Rminibwa will follow the `RsimdDispatch`/`SIMDe` design for native alignment
+kernels. SSE4.2 is common on current x86_64 machines, but runtime dispatch is
+still useful for explicit diagnostics, fallback behavior, ARM/NEON, and future
+wasm builds.
+
+## Boundary
+
+Dispatch starts at the SIMD-sensitive KSW alignment kernels:
+
+- `ksw_extz2_sse()`
+- `ksw_extd2_sse()`
+- selected symbols from `ksw2_ll_sse.c` if a future path needs them
+
+The rest of minibwa should stay baseline-compiled once:
+
+- index loading;
+- BWT and seeding;
+- chaining;
+- pairing;
+- formatting;
+- R external-pointer glue.
+
+## Source adaptation
+
+Upstream currently selects native SSE or the small `s2n-lite.h` NEON bridge in
+individual KSW files. Rminibwa carries a small opt-in patch that adds an
+`RMINIBWA_USE_SIMDE` include branch. Upstream behavior is unchanged unless our
+build defines that macro.
+
+```c
+#define RMINIBWA_USE_SIMDE
+#define SIMDE_ENABLE_NATIVE_ALIASES
+#include <simde/x86/sse2.h>
+#include <simde/x86/sse4.1.h>
+```
+
+## Backend names
+
+Initial backend names should be conservative:
+
+- `portable`: SIMDe fallback with no CPU-specific flags;
+- `sse42`: x86_64 native SSE4.2/POPCNT build;
+- `neon`: ARM native NEON build;
+- `wasm128`: future WebAssembly SIMD128 build.
+
+Avoid exposing `avx2` unless we add real AVX2-width kernels. The upstream KSW
+code is SSE-width, so an AVX2 label would be misleading without a real AVX2
+implementation.
+
+## R surface
+
+Expose the same style as `RsimdDispatch`:
+
+```r
+simd_backend()
+simd_set_backend("auto")
+simd_info()
+```
+
+The info object should report compiled backends, CPU-supported backends,
+selected backend, and per-operation selected backend.
+
+## Validation
+
+For every backend:
+
+1. run the same native mapping fixture;
+2. compare to the pinned upstream CLI output;
+3. compare portable SIMDe vs native SSE/NEON results;
+4. log selected backend and compiled backend metadata in tests.

@@ -1,20 +1,39 @@
+
 # Rminibwa
 
-Rminibwa is a new R package/repo for exploring an R interface to
-[minibwa](https://github.com/lh3/minibwa) and, later, a native runtime-SIMD
-backend using the `RsimdDispatch` approach.
+<!-- badges: start -->
 
-Current state: scaffold plus CLI wrappers. Native library bindings and dynamic
-SIMD dispatch are intentionally still design work.
+[![R-CMD-check](https://github.com/sounkou-bioinfo/Rminibwa/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sounkou-bioinfo/Rminibwa/actions/workflows/R-CMD-check.yaml)
+[![R-universe](https://sounkou-bioinfo.r-universe.dev/badges/Rminibwa)](https://sounkou-bioinfo.r-universe.dev)
+<!-- badges: end -->
 
-Design decision: even though SSE4.2 is common on modern x86_64, the native path
-will still follow the `RsimdDispatch` package and use `SIMDe`-backed runtime
-selection. That gives us a portable fallback, explicit backend reporting, and a
-cleaner route to ARM/NEON and wasm experiments.
+Rminibwa is an R-facing package for integrating
+[minibwa](https://github.com/lh3/minibwa), Heng Li’s short-read aligner,
+with R. The package starts with command-line wrappers and keeps a pinned
+upstream source and patch queue for native-library work.
 
-## CLI usage
+The native path will follow the `RsimdDispatch`/`SIMDe` style: use
+upstream minibwa algorithms, isolate SIMD-sensitive KSW kernels, and
+select portable, SSE4.2, NEON, or future wasm backends at runtime.
 
-```r
+## Install
+
+``` r
+# install.packages("remotes")
+remotes::install_github("sounkou-bioinfo/Rminibwa")
+```
+
+The current public API needs an installed `minibwa` executable at
+runtime. The planned native C-library backend will use GNU make and
+zlib. Set a custom CLI binary with:
+
+``` r
+Sys.setenv(RMINIBWA_MINIBWA = "/path/to/minibwa")
+```
+
+## CLI API
+
+``` r
 library(Rminibwa)
 
 minibwa_available()
@@ -24,25 +43,60 @@ prefix <- minibwa_index("ref.fa", threads = 8)
 aln <- minibwa_map(prefix, "reads.fq.gz", format = "paf", threads = 8)
 ```
 
-Set a custom binary with:
+`minibwa_map()` returns captured output when `output = NULL` and writes
+to a file when `output` is supplied.
 
-```r
-Sys.setenv(RMINIBWA_MINIBWA = "/path/to/minibwa")
+## Pinned upstream workflow
+
+The upstream pin lives in `tools/minibwa-upstream.dcf` and is installed
+as package metadata:
+
+``` r
+Rminibwa::minibwa_upstream_info()[c("Version", "Commit")]
+#> $Version
+#> [1] "0.1-r363"
+#> 
+#> $Commit
+#> [1] "0a3421434f9dbab4def012aef37946e8a9fc08f8"
 ```
 
-For local development you can build an upstream CLI copy with:
+The patch queue lives in `tools/patches/minibwa/`.
 
-```sh
+Build a local developer CLI from the pinned commit with the SIMDe patch
+queue applied:
+
+``` sh
 tools/build-minibwa-cli.sh
 export RMINIBWA_MINIBWA=$PWD/.local/bin/minibwa
 ```
 
-## Shape discussion
+Stage a vendored source tree when native bindings begin:
 
-See [`docs/shape.md`](docs/shape.md) and [`docs/simde-dispatch.md`](docs/simde-dispatch.md). Short version:
+``` sh
+Rscript tools/vendor-minibwa.R refresh
+```
 
-- ship a CLI-compatible layer first;
-- add native C bindings around `mb_idx_load()`, `mb_map()`, and
-  `mb_map_batch()` next;
-- isolate the SIMD-sensitive KSW alignment kernels for `SIMDe` + runtime
-  dispatch rather than rewriting minibwa.
+The vendoring script records the upstream commit, archive checksum, and
+applied patches in `src/vendor/minibwa/RMINIBWA_VENDOR.dcf`.
+
+## Shape
+
+The planned native implementation is deliberately narrow:
+
+1.  keep the CLI wrapper as the compatibility oracle;
+2.  load `.l2b`/`.mbw` indexes into R external pointers;
+3.  expose `mb_map()` and `mb_map_batch()` through `.Call()`;
+4.  dispatch the KSW alignment kernels through the
+    `RsimdDispatch`/`SIMDe` runtime-selection pattern.
+
+See the package vignettes for details.
+
+## Development
+
+``` sh
+make rd       # roxygen docs and NAMESPACE
+make readme   # evaluate README.Rmd and write README.md
+make test
+make check
+make pkgdown
+```

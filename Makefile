@@ -1,16 +1,82 @@
-.PHONY: document test build check clean
+# h/t to @jimhester and @yihui for this parse block:
+# https://github.com/yihui/knitr/blob/dc5ead7bcfc0ebd2789fe99c527c7d91afb3de4a/Makefile#L1-L4
+# Note the portability change as suggested in the manual:
+# https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Writing-portable-packages
+PKGNAME := $(shell sed -n 's/Package: *\([^ ]*\)/\1/p' DESCRIPTION)
+PKGVERS := $(shell sed -n 's/Version: *\([^ ]*\)/\1/p' DESCRIPTION)
 
-document:
-	Rscript -e 'roxygen2::roxygenize(load_code = "source")'
+all: check
 
-test:
-	Rscript -e 'tinytest::test_package("Rminibwa")'
+rd:
+	R -e 'roxygen2::roxygenize(load_code = "source")'
+
+readme:
+	R -e 'rmarkdown::render("README.Rmd", output_format = rmarkdown::github_document(), output_file = "README.md")'
+
+vig:
+	R -e "tools::buildVignettes(dir = '.')"
+
+vig-md:
+	R -e "for (f in Sys.glob('vignettes/*.Rmd')) { out <- sub('\\\\.Rmd$$', '.md', f); rmarkdown::render(f, output_format = rmarkdown::md_document(variant = 'gfm'), output_file = basename(out), output_dir = dirname(out), quiet = FALSE, envir = new.env(parent = globalenv())) }"
+
+pkgdown:
+	R -e 'pkgdown::build_site()'
+
+vendor:
+	Rscript tools/vendor-minibwa.R refresh
+
+vendor-status:
+	Rscript tools/vendor-minibwa.R status
+
+sync-upstream:
+	@mkdir -p inst/upstream
+	@cp tools/minibwa-upstream.dcf inst/upstream/minibwa.dcf
+	@echo 'Upstream metadata synced.'
+
+check-upstream-sync:
+	@diff -q tools/minibwa-upstream.dcf inst/upstream/minibwa.dcf >/dev/null || \
+		(echo 'ERROR: upstream metadata drift detected' && exit 1)
+
+minibwa-cli:
+	tools/build-minibwa-cli.sh
 
 build:
 	R CMD build .
 
 check: build
-	R CMD check Rminibwa_*.tar.gz
+	R CMD check --as-cran --no-manual $(PKGNAME)_$(PKGVERS).tar.gz
+
+install_deps:
+	R \
+	-e 'if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")' \
+	-e 'remotes::install_deps(dependencies = TRUE)'
+
+install: build
+	R CMD INSTALL $(PKGNAME)_$(PKGVERS).tar.gz
+
+install2:
+	R CMD INSTALL --no-configure .
+
+install3:
+	R CMD INSTALL .
 
 clean:
-	rm -rf Rminibwa_*.tar.gz Rminibwa.Rcheck .Rcheck
+	@rm -rf $(PKGNAME)_$(PKGVERS).tar.gz $(PKGNAME)_$(PKGVERS).tgz $(PKGNAME).Rcheck .Rcheck src/vendor/minibwa src/vendor/_archives config.log src/Makevars src/Makevars.win src/*.o src/*.so src/*.dll src/*.dylib
+
+# Development targets
+dev-install:
+	R CMD INSTALL --preclean .
+
+test1:
+	R -e "tinytest::test_package('$(PKGNAME)', testdir = 'inst/tinytest', ncpu = 1L)"
+
+test2:
+	R -e "tinytest::test_package('$(PKGNAME)', testdir = 'inst/tinytest', ncpu = 2L)"
+
+test0:
+	R -e "tinytest::test_package('$(PKGNAME)', testdir = 'inst/tinytest')"
+
+test: install
+	R -e "tinytest::test_package('$(PKGNAME)', testdir = 'inst/tinytest')"
+
+.PHONY: all rd readme vig vig-md pkgdown vendor vendor-status sync-upstream check-upstream-sync minibwa-cli build check install_deps install install2 install3 clean dev-install test1 test2 test0 test

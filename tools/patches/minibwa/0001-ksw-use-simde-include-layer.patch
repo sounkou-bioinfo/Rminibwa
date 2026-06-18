@@ -1,0 +1,50 @@
+diff --git a/ksw2_extd2_sse.c b/ksw2_extd2_sse.c
+index eafeb4e..3fb18ca 100644
+--- a/ksw2_extd2_sse.c
++++ b/ksw2_extd2_sse.c
+@@ -2,7 +2,11 @@
+ #include <assert.h>
+ #include "ksw2.h"
+ 
+-#if defined(__ARM_NEON)
++#if defined(RMINIBWA_USE_SIMDE)
++#define SIMDE_ENABLE_NATIVE_ALIASES
++#include <simde/x86/sse2.h>
++#include <simde/x86/sse4.1.h>
++#elif defined(__ARM_NEON)
+ #define __SSE4_1__
+ #include "s2n-lite.h"
+ #elif defined(__SSE4_1__)
+diff --git a/ksw2_extz2_sse.c b/ksw2_extz2_sse.c
+index af4981c..89837e7 100644
+--- a/ksw2_extz2_sse.c
++++ b/ksw2_extz2_sse.c
+@@ -2,7 +2,11 @@
+ #include <assert.h>
+ #include "ksw2.h"
+ 
+-#if defined(__ARM_NEON)
++#if defined(RMINIBWA_USE_SIMDE)
++#define SIMDE_ENABLE_NATIVE_ALIASES
++#include <simde/x86/sse2.h>
++#include <simde/x86/sse4.1.h>
++#elif defined(__ARM_NEON)
+ #define __SSE4_1__
+ #include "s2n-lite.h"
+ #elif defined(__SSE4_1__)
+diff --git a/ksw2_ll_sse.c b/ksw2_ll_sse.c
+index 2e4fb31..9531855 100644
+--- a/ksw2_ll_sse.c
++++ b/ksw2_ll_sse.c
+@@ -3,7 +3,10 @@
+ #include <string.h>
+ #include "ksw2.h"
+ 
+-#if defined(__ARM_NEON)
++#if defined(RMINIBWA_USE_SIMDE)
++#define SIMDE_ENABLE_NATIVE_ALIASES
++#include <simde/x86/sse2.h>
++#elif defined(__ARM_NEON)
+ #include "s2n-lite.h"
+ #elif defined(__SSE2__)
+ #include <xmmintrin.h>
