@@ -1,8 +1,7 @@
 # Getting Started
 
-Rminibwa starts as a small R interface to the `minibwa` executable. The
-package can be installed and checked without `minibwa`, but mapping
-functions need an executable at runtime.
+Rminibwa installs a `minibwa` executable built from its vendored
+upstream source, plus native R bindings for index-backed mapping.
 
 ``` r
 
@@ -10,11 +9,11 @@ library(Rminibwa)
 minibwa_available()
 ```
 
-Set a custom executable with an environment variable:
+Check the packaged executable:
 
 ``` r
 
-Sys.setenv(RMINIBWA_MINIBWA = "/path/to/minibwa")
+minibwa_path()
 minibwa_version()
 ```
 
@@ -33,5 +32,6 @@ Write SAM or PAF output directly to a file by setting `output`:
 minibwa_map(prefix, c("read1.fq.gz", "read2.fq.gz"), output = "aln.sam")
 ```
 
-The CLI layer is intentionally thin. It should stay close to upstream
-behavior and serve as the validation oracle for future native bindings.
+The CLI layer is intentionally thin and stays close to upstream
+behavior. The native batch API is the preferred hot path for in-process
+R workflows.

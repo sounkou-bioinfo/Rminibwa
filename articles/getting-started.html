@@ -68,16 +68,15 @@
 
     
     
-<p>Rminibwa starts as a small R interface to the <code>minibwa</code>
-executable. The package can be installed and checked without
-<code>minibwa</code>, but mapping functions need an executable at
-runtime.</p>
+<p>Rminibwa installs a <code>minibwa</code> executable built from its
+vendored upstream source, plus native R bindings for index-backed
+mapping.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/sounkou-bioinfo/Rminibwa" class="external-link">Rminibwa</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/minibwa_available.html">minibwa_available</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>Set a custom executable with an environment variable:</p>
+<p>Check the packaged executable:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>RMINIBWA_MINIBWA <span class="op">=</span> <span class="st">"/path/to/minibwa"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/minibwa_path.html">minibwa_path</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/minibwa_version.html">minibwa_version</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Index a reference and map reads:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
@@ -87,9 +86,9 @@ runtime.</p>
 <code>output</code>:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/minibwa_map.html">minibwa_map</a></span><span class="op">(</span><span class="va">prefix</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"read1.fq.gz"</span>, <span class="st">"read2.fq.gz"</span><span class="op">)</span>, output <span class="op">=</span> <span class="st">"aln.sam"</span><span class="op">)</span></span></code></pre></div>
-<p>The CLI layer is intentionally thin. It should stay close to upstream
-behavior and serve as the validation oracle for future native
-bindings.</p>
+<p>The CLI layer is intentionally thin and stays close to upstream
+behavior. The native batch API is the preferred hot path for in-process
+R workflows.</p>
   </main>
 </div>
 

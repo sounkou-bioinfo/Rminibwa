@@ -96,8 +96,10 @@ unless that macro is defined.</p>
 <p>Fetch the pinned upstream source into <code>.sync/minibwa</code>:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="ex">tools/fetch-minibwa.sh</span></span></code></pre></div>
 <p>Build a local developer CLI with the SIMDe patch queue applied:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="ex">tools/build-minibwa-cli.sh</span></span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="bu">export</span> <span class="va">RMINIBWA_MINIBWA</span><span class="op">=</span><span class="va">$PWD</span>/.local/bin/minibwa</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="ex">tools/build-minibwa-cli.sh</span></span></code></pre></div>
+<p>The installed R package builds its own <code>minibwa</code>
+executable from the vendored source; this developer helper is only for
+manual upstream comparisons.</p>
 <p>By default the developer build uses:</p>
 <ul>
 <li>

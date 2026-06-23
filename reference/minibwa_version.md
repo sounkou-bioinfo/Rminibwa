@@ -12,7 +12,8 @@ minibwa_version(path = minibwa_path())
 
 - path:
 
-  Executable name or path.
+  Optional executable name or path. When `NULL`, use Rminibwa's packaged
+  minibwa executable.
 
 ## Value
 

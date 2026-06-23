@@ -48,7 +48,9 @@
 <li>Add AVX2 dual-gap <code>extd2</code> support from the minibwa binding work and keep it as an optional runtime-dispatched backend.</li>
 <li>Vendor minibwa at commit <code>f0fd108456d459e5da3755f29c8700dc7f6fe0df</code> with a patch queue and provenance metadata.</li>
 <li>Add Rtinycc inline downstream-C examples in the README, vignette, and tests.</li>
-<li>Add developer-only benchmarks comparing internal staged backends and external Python/Rust bindings built with native AVX2 flags.</li>
+<li>Build and install a package-provided <code>minibwa</code> executable from vendored sources; CLI wrappers now use it by default.</li>
+<li>Add developer-only benchmarks comparing internal staged backends and optional external Python/Rust bindings from an explicit local checkout.</li>
+<li>Add <code>make asm</code> / <code>tools/check-assembly.R</code> to audit generated SIMD instruction families in staged objects and shared libraries.</li>
 <li>Add pkgdown configuration and GitHub Actions workflows for standard R CMD check, Fedora/R-devel CRAN-style check, and GitHub Pages deployment.</li>
 </ul></div>
   </main></div>

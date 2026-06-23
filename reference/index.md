@@ -25,7 +25,7 @@
 - [`minibwa_map()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/minibwa_map.md)
   : Map reads through the minibwa CLI
 - [`minibwa_path()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/minibwa_path.md)
-  : Locate the minibwa executable
+  : Locate the packaged minibwa executable
 - [`minibwa_upstream_info()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/minibwa_upstream_info.md)
   : Report the pinned upstream minibwa source
 - [`minibwa_version()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/minibwa_version.md)

@@ -5,14 +5,15 @@ Test whether the minibwa CLI is available
 ## Usage
 
 ``` r
-minibwa_available(path = Sys.getenv("RMINIBWA_MINIBWA", unset = "minibwa"))
+minibwa_available(path = NULL)
 ```
 
 ## Arguments
 
 - path:
 
-  Executable name or path.
+  Optional executable name or path. When `NULL`, use Rminibwa's packaged
+  minibwa executable.
 
 ## Value
 
