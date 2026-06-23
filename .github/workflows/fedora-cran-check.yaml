@@ -28,7 +28,8 @@ jobs:
       - name: Install OS dependencies
         run: |
           dnf install -y --setopt=install_weak_deps=False \
-            zlib-devel libuv-devel pandoc qpdf texlive-scheme-medium
+            zlib-devel libuv-devel libxml2-devel libicu-devel \
+            pandoc qpdf texlive-scheme-medium
 
       - name: Cache R library
         uses: actions/cache@v4
@@ -48,7 +49,7 @@ jobs:
               sounkou = "https://sounkou-bioinfo.r-universe.dev",
               CRAN = "https://cloud.r-project.org"
             ))
-            pkgs <- c("knitr", "rmarkdown", "RsimdDispatch", "Rtinycc", "tinytest")
+            pkgs <- c("knitr", "rmarkdown", "roxygen2", "RsimdDispatch", "Rtinycc", "tinytest")
             need <- setdiff(pkgs,
               rownames(installed.packages(lib.loc = Sys.getenv("R_LIBS_USER"))))
             if (length(need)) install.packages(need, lib = Sys.getenv("R_LIBS_USER"))
