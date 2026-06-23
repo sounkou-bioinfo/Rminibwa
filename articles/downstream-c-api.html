@@ -78,9 +78,9 @@ downstream package therefore needs <code>LinkingTo: Rminibwa</code> for
 the header and an ordinary R package runtime dependency to ensure
 Rminibwa is loaded before the first call.</p>
 <p>This vignette uses <code>Rtinycc</code> to compile the downstream
-consumer in-process. The C source is inline, visible, and stored by the
-<code>rtinycc</code> knitr engine in the <code>rminibwa_capi_code</code>
-R object.</p>
+consumer in-process. The C source is displayed with Rtinycc’s C
+rendering helper and compiled from the same
+<code>rminibwa_capi_code</code> object.</p>
 <div class="section level2">
 <h2 id="build-a-tiny-alignment-batch">Build a tiny alignment batch<a class="anchor" aria-label="anchor" href="#build-a-tiny-alignment-batch"></a>
 </h2>
@@ -107,48 +107,48 @@ R object.</p>
 <div class="section level2">
 <h2 id="the-downstream-c-consumer">The downstream C consumer<a class="anchor" aria-label="anchor" href="#the-downstream-c-consumer"></a>
 </h2>
-<pre class="rtinycc"><code>#define _Complex
-#include &lt;limits.h&gt;
-#include &lt;stdint.h&gt;
-#include &lt;stddef.h&gt;
-#include &lt;R.h&gt;
-#include &lt;Rinternals.h&gt;
-#include &lt;Rminibwa.h&gt;
-
-static int clamp_size_to_int(size_t x)
-{
-    return x &gt; (size_t) INT_MAX ? INT_MAX : (int) x;
-}
-
-SEXP rminibwa_capi_summary(SEXP align_x)
-{
-    const RmbAlignBatch *batch = Rminibwa_align_from_sexp(align_x);
-    const size_t n = Rminibwa_align_n(batch);
-    const int32_t *tid = Rminibwa_align_i32_col(batch, "tid");
-    const int32_t *qe = Rminibwa_align_i32_col(batch, "qe");
-    const int64_t *ts = Rminibwa_align_i64_col(batch, "ts");
-    size_t n_cigar_words = 0;
-    (void) Rminibwa_align_cigar_words(batch, &amp;n_cigar_words);
-
-    SEXP out = PROTECT(Rf_allocVector(INTSXP, 4));
-    INTEGER(out)[0] = clamp_size_to_int(n);
-    INTEGER(out)[1] = n &amp;&amp; tid ? tid[0] : NA_INTEGER;
-    INTEGER(out)[2] = n &amp;&amp; qe ? qe[0] : NA_INTEGER;
-    INTEGER(out)[3] = clamp_size_to_int(n_cigar_words);
-
-    SEXP names = PROTECT(Rf_allocVector(STRSXP, 4));
-    SET_STRING_ELT(names, 0, Rf_mkChar("n"));
-    SET_STRING_ELT(names, 1, Rf_mkChar("first_tid"));
-    SET_STRING_ELT(names, 2, Rf_mkChar("first_qe"));
-    SET_STRING_ELT(names, 3, Rf_mkChar("cigar_words"));
-    Rf_setAttrib(out, R_NamesSymbol, names);
-
-    /* Touch one 64-bit column so this example covers both integer-width paths. */
-    if (n &amp;&amp; ts &amp;&amp; ts[0] &lt; 0) INTEGER(out)[2] = NA_INTEGER;
-
-    UNPROTECT(2);
-    return out;
-}</code></pre>
+<div class="sourceCode" id="cb3"><pre class="sourceCode c rtinycc"><code class="sourceCode c"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="pp">#define _Complex</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;limits.h&gt;</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdint.h&gt;</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stddef.h&gt;</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;R.h&gt;</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Rinternals.h&gt;</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Rminibwa.h&gt;</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="dt">static</span> <span class="dt">int</span> clamp_size_to_int<span class="op">(</span><span class="dt">size_t</span> x<span class="op">)</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>    <span class="cf">return</span> x <span class="op">&gt;</span> <span class="op">(</span><span class="dt">size_t</span><span class="op">)</span> INT_MAX <span class="op">?</span> INT_MAX <span class="op">:</span> <span class="op">(</span><span class="dt">int</span><span class="op">)</span> x<span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>SEXP rminibwa_capi_summary<span class="op">(</span>SEXP align_x<span class="op">)</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>    <span class="dt">const</span> RmbAlignBatch <span class="op">*</span>batch <span class="op">=</span> Rminibwa_align_from_sexp<span class="op">(</span>align_x<span class="op">);</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>    <span class="dt">const</span> <span class="dt">size_t</span> n <span class="op">=</span> Rminibwa_align_n<span class="op">(</span>batch<span class="op">);</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>    <span class="dt">const</span> <span class="dt">int32_t</span> <span class="op">*</span>tid <span class="op">=</span> Rminibwa_align_i32_col<span class="op">(</span>batch<span class="op">,</span> <span class="st">"tid"</span><span class="op">);</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>    <span class="dt">const</span> <span class="dt">int32_t</span> <span class="op">*</span>qe <span class="op">=</span> Rminibwa_align_i32_col<span class="op">(</span>batch<span class="op">,</span> <span class="st">"qe"</span><span class="op">);</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>    <span class="dt">const</span> <span class="dt">int64_t</span> <span class="op">*</span>ts <span class="op">=</span> Rminibwa_align_i64_col<span class="op">(</span>batch<span class="op">,</span> <span class="st">"ts"</span><span class="op">);</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>    <span class="dt">size_t</span> n_cigar_words <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>    <span class="op">(</span><span class="dt">void</span><span class="op">)</span> Rminibwa_align_cigar_words<span class="op">(</span>batch<span class="op">,</span> <span class="op">&amp;</span>n_cigar_words<span class="op">);</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a>    SEXP out <span class="op">=</span> PROTECT<span class="op">(</span>Rf_allocVector<span class="op">(</span>INTSXP<span class="op">,</span> <span class="dv">4</span><span class="op">));</span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a>    INTEGER<span class="op">(</span>out<span class="op">)[</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> clamp_size_to_int<span class="op">(</span>n<span class="op">);</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a>    INTEGER<span class="op">(</span>out<span class="op">)[</span><span class="dv">1</span><span class="op">]</span> <span class="op">=</span> n <span class="op">&amp;&amp;</span> tid <span class="op">?</span> tid<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:</span> NA_INTEGER<span class="op">;</span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a>    INTEGER<span class="op">(</span>out<span class="op">)[</span><span class="dv">2</span><span class="op">]</span> <span class="op">=</span> n <span class="op">&amp;&amp;</span> qe <span class="op">?</span> qe<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:</span> NA_INTEGER<span class="op">;</span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a>    INTEGER<span class="op">(</span>out<span class="op">)[</span><span class="dv">3</span><span class="op">]</span> <span class="op">=</span> clamp_size_to_int<span class="op">(</span>n_cigar_words<span class="op">);</span></span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a>    SEXP names <span class="op">=</span> PROTECT<span class="op">(</span>Rf_allocVector<span class="op">(</span>STRSXP<span class="op">,</span> <span class="dv">4</span><span class="op">));</span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a>    SET_STRING_ELT<span class="op">(</span>names<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> Rf_mkChar<span class="op">(</span><span class="st">"n"</span><span class="op">));</span></span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a>    SET_STRING_ELT<span class="op">(</span>names<span class="op">,</span> <span class="dv">1</span><span class="op">,</span> Rf_mkChar<span class="op">(</span><span class="st">"first_tid"</span><span class="op">));</span></span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a>    SET_STRING_ELT<span class="op">(</span>names<span class="op">,</span> <span class="dv">2</span><span class="op">,</span> Rf_mkChar<span class="op">(</span><span class="st">"first_qe"</span><span class="op">));</span></span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a>    SET_STRING_ELT<span class="op">(</span>names<span class="op">,</span> <span class="dv">3</span><span class="op">,</span> Rf_mkChar<span class="op">(</span><span class="st">"cigar_words"</span><span class="op">));</span></span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a>    Rf_setAttrib<span class="op">(</span>out<span class="op">,</span> R_NamesSymbol<span class="op">,</span> names<span class="op">);</span></span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a></span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a>    <span class="co">/* Touch one 64-bit column so this example covers both integer-width paths. */</span></span>
+<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>n <span class="op">&amp;&amp;</span> ts <span class="op">&amp;&amp;</span> ts<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> INTEGER<span class="op">(</span>out<span class="op">)[</span><span class="dv">2</span><span class="op">]</span> <span class="op">=</span> NA_INTEGER<span class="op">;</span></span>
+<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a></span>
+<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a>    UNPROTECT<span class="op">(</span><span class="dv">2</span><span class="op">);</span></span>
+<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a>    <span class="cf">return</span> out<span class="op">;</span></span>
+<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="compile-and-call-it-with-rtinycc">Compile and call it with Rtinycc<a class="anchor" aria-label="anchor" href="#compile-and-call-it-with-rtinycc"></a>

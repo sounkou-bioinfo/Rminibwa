@@ -14,8 +14,8 @@ ordinary R package runtime dependency to ensure Rminibwa is loaded
 before the first call.
 
 This vignette uses `Rtinycc` to compile the downstream consumer
-in-process. The C source is inline, visible, and stored by the `rtinycc`
-knitr engine in the `rminibwa_capi_code` R object.
+in-process. The C source is displayed with Rtinycc’s C rendering helper
+and compiled from the same `rminibwa_capi_code` object.
 
 ## Build a tiny alignment batch
 
@@ -43,7 +43,7 @@ mb_align_col(aln, "tid")[[1]]
 
 ## The downstream C consumer
 
-``` rtinycc
+``` c
 #define _Complex
 #include <limits.h>
 #include <stdint.h>

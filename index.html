@@ -120,49 +120,49 @@
 <div class="section level2">
 <h2 id="downstream-c-api-with-rtinycc">Downstream C API with Rtinycc<a class="anchor" aria-label="anchor" href="#downstream-c-api-with-rtinycc"></a>
 </h2>
-<p><code>Rminibwa.h</code> is installed for downstream C consumers. This inline C chunk uses <code>R_GetCCallable()</code> through the header wrappers, then reads borrowed alignment columns directly. The <code>rtinycc</code> knitr engine displays the C code and stores the chunk body in <code>rminibwa_capi_code</code> for the next R chunk.</p>
-<pre class="rtinycc"><code>#define _Complex
-#include &lt;limits.h&gt;
-#include &lt;stdint.h&gt;
-#include &lt;stddef.h&gt;
-#include &lt;R.h&gt;
-#include &lt;Rinternals.h&gt;
-#include &lt;Rminibwa.h&gt;
-
-static int clamp_size_to_int(size_t x)
-{
-    return x &gt; (size_t) INT_MAX ? INT_MAX : (int) x;
-}
-
-SEXP rminibwa_capi_summary(SEXP align_x)
-{
-    const RmbAlignBatch *batch = Rminibwa_align_from_sexp(align_x);
-    const size_t n = Rminibwa_align_n(batch);
-    const int32_t *tid = Rminibwa_align_i32_col(batch, "tid");
-    const int32_t *qe = Rminibwa_align_i32_col(batch, "qe");
-    const int64_t *ts = Rminibwa_align_i64_col(batch, "ts");
-    size_t n_cigar_words = 0;
-    (void) Rminibwa_align_cigar_words(batch, &amp;n_cigar_words);
-
-    SEXP out = PROTECT(Rf_allocVector(INTSXP, 4));
-    INTEGER(out)[0] = clamp_size_to_int(n);
-    INTEGER(out)[1] = n &amp;&amp; tid ? tid[0] : NA_INTEGER;
-    INTEGER(out)[2] = n &amp;&amp; qe ? qe[0] : NA_INTEGER;
-    INTEGER(out)[3] = clamp_size_to_int(n_cigar_words);
-
-    SEXP names = PROTECT(Rf_allocVector(STRSXP, 4));
-    SET_STRING_ELT(names, 0, Rf_mkChar("n"));
-    SET_STRING_ELT(names, 1, Rf_mkChar("first_tid"));
-    SET_STRING_ELT(names, 2, Rf_mkChar("first_qe"));
-    SET_STRING_ELT(names, 3, Rf_mkChar("cigar_words"));
-    Rf_setAttrib(out, R_NamesSymbol, names);
-
-    /* Touch one 64-bit column so this example covers both integer-width paths. */
-    if (n &amp;&amp; ts &amp;&amp; ts[0] &lt; 0) INTEGER(out)[2] = NA_INTEGER;
-
-    UNPROTECT(2);
-    return out;
-}</code></pre>
+<p><code>Rminibwa.h</code> is installed for downstream C consumers. This example uses <code>R_GetCCallable()</code> through the header wrappers, then reads borrowed alignment columns directly. The same source is displayed here and compiled in the next chunk.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="pp">#define _Complex</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;limits.h&gt;</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdint.h&gt;</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stddef.h&gt;</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;R.h&gt;</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Rinternals.h&gt;</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Rminibwa.h&gt;</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="dt">static</span> <span class="dt">int</span> clamp_size_to_int<span class="op">(</span><span class="dt">size_t</span> x<span class="op">)</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>    <span class="cf">return</span> x <span class="op">&gt;</span> <span class="op">(</span><span class="dt">size_t</span><span class="op">)</span> INT_MAX <span class="op">?</span> INT_MAX <span class="op">:</span> <span class="op">(</span><span class="dt">int</span><span class="op">)</span> x<span class="op">;</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>SEXP rminibwa_capi_summary<span class="op">(</span>SEXP align_x<span class="op">)</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>    <span class="dt">const</span> RmbAlignBatch <span class="op">*</span>batch <span class="op">=</span> Rminibwa_align_from_sexp<span class="op">(</span>align_x<span class="op">);</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>    <span class="dt">const</span> <span class="dt">size_t</span> n <span class="op">=</span> Rminibwa_align_n<span class="op">(</span>batch<span class="op">);</span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>    <span class="dt">const</span> <span class="dt">int32_t</span> <span class="op">*</span>tid <span class="op">=</span> Rminibwa_align_i32_col<span class="op">(</span>batch<span class="op">,</span> <span class="st">"tid"</span><span class="op">);</span></span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>    <span class="dt">const</span> <span class="dt">int32_t</span> <span class="op">*</span>qe <span class="op">=</span> Rminibwa_align_i32_col<span class="op">(</span>batch<span class="op">,</span> <span class="st">"qe"</span><span class="op">);</span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>    <span class="dt">const</span> <span class="dt">int64_t</span> <span class="op">*</span>ts <span class="op">=</span> Rminibwa_align_i64_col<span class="op">(</span>batch<span class="op">,</span> <span class="st">"ts"</span><span class="op">);</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>    <span class="dt">size_t</span> n_cigar_words <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a>    <span class="op">(</span><span class="dt">void</span><span class="op">)</span> Rminibwa_align_cigar_words<span class="op">(</span>batch<span class="op">,</span> <span class="op">&amp;</span>n_cigar_words<span class="op">);</span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a>    SEXP out <span class="op">=</span> PROTECT<span class="op">(</span>Rf_allocVector<span class="op">(</span>INTSXP<span class="op">,</span> <span class="dv">4</span><span class="op">));</span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a>    INTEGER<span class="op">(</span>out<span class="op">)[</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> clamp_size_to_int<span class="op">(</span>n<span class="op">);</span></span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a>    INTEGER<span class="op">(</span>out<span class="op">)[</span><span class="dv">1</span><span class="op">]</span> <span class="op">=</span> n <span class="op">&amp;&amp;</span> tid <span class="op">?</span> tid<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:</span> NA_INTEGER<span class="op">;</span></span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a>    INTEGER<span class="op">(</span>out<span class="op">)[</span><span class="dv">2</span><span class="op">]</span> <span class="op">=</span> n <span class="op">&amp;&amp;</span> qe <span class="op">?</span> qe<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:</span> NA_INTEGER<span class="op">;</span></span>
+<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a>    INTEGER<span class="op">(</span>out<span class="op">)[</span><span class="dv">3</span><span class="op">]</span> <span class="op">=</span> clamp_size_to_int<span class="op">(</span>n_cigar_words<span class="op">);</span></span>
+<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a></span>
+<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a>    SEXP names <span class="op">=</span> PROTECT<span class="op">(</span>Rf_allocVector<span class="op">(</span>STRSXP<span class="op">,</span> <span class="dv">4</span><span class="op">));</span></span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a>    SET_STRING_ELT<span class="op">(</span>names<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> Rf_mkChar<span class="op">(</span><span class="st">"n"</span><span class="op">));</span></span>
+<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a>    SET_STRING_ELT<span class="op">(</span>names<span class="op">,</span> <span class="dv">1</span><span class="op">,</span> Rf_mkChar<span class="op">(</span><span class="st">"first_tid"</span><span class="op">));</span></span>
+<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a>    SET_STRING_ELT<span class="op">(</span>names<span class="op">,</span> <span class="dv">2</span><span class="op">,</span> Rf_mkChar<span class="op">(</span><span class="st">"first_qe"</span><span class="op">));</span></span>
+<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a>    SET_STRING_ELT<span class="op">(</span>names<span class="op">,</span> <span class="dv">3</span><span class="op">,</span> Rf_mkChar<span class="op">(</span><span class="st">"cigar_words"</span><span class="op">));</span></span>
+<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a>    Rf_setAttrib<span class="op">(</span>out<span class="op">,</span> R_NamesSymbol<span class="op">,</span> names<span class="op">);</span></span>
+<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a></span>
+<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a>    <span class="co">/* Touch one 64-bit column so this example covers both integer-width paths. */</span></span>
+<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>n <span class="op">&amp;&amp;</span> ts <span class="op">&amp;&amp;</span> ts<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> INTEGER<span class="op">(</span>out<span class="op">)[</span><span class="dv">2</span><span class="op">]</span> <span class="op">=</span> NA_INTEGER<span class="op">;</span></span>
+<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a></span>
+<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a>    UNPROTECT<span class="op">(</span><span class="dv">2</span><span class="op">);</span></span>
+<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a>    <span class="cf">return</span> out<span class="op">;</span></span>
+<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ffi</span> <span class="op">&lt;-</span> <span class="fu">Rtinycc</span><span class="fu">::</span><span class="fu"><a href="https://sounkou-bioinfo.github.io/Rtinycc/reference/tcc_ffi.html" class="external-link">tcc_ffi</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">Rtinycc</span><span class="fu">::</span><span class="fu"><a href="https://sounkou-bioinfo.github.io/Rtinycc/reference/tcc_include.html" class="external-link">tcc_include</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"include"</span>, package <span class="op">=</span> <span class="st">"Rminibwa"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -210,6 +210,10 @@ SEXP rminibwa_capi_summary(SEXP align_x)
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>backend <span class="op">=</span> <span class="va">backend</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">as.list</a></span><span class="op">(</span><span class="fu">Rminibwa</span><span class="fu">:::</span><span class="fu">simd_counters</span><span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span>, check.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">ksw_counts</span></span>
+<span><span class="co">#&gt;   backend extz2 extd2 ll_qinit ll_u8_core ll_i16_core ll_i16</span></span>
+<span><span class="co">#&gt; 1  scalar     0   438        0          0           0      0</span></span>
+<span><span class="co">#&gt; 2    sse4     0   438        0          0           0      0</span></span>
+<span><span class="co">#&gt; 3    avx2     0   438        0          0           0      0</span></span>
 <span></span>
 <span><span class="va">rminibwa_internal</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">internal_backends</span>, <span class="kw">function</span><span class="op">(</span><span class="va">backend</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="reference/simd_set_backend.html">simd_set_backend</a></span><span class="op">(</span><span class="va">backend</span><span class="op">)</span></span>
@@ -223,6 +227,12 @@ SEXP rminibwa_capi_summary(SEXP align_x)
 <span>  <span class="va">out</span></span>
 <span><span class="op">}</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">rminibwa_internal</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"backend"</span>, <span class="st">"min"</span>, <span class="st">"median"</span>, <span class="st">"itr/sec"</span>, <span class="st">"mem_alloc"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; # A tibble: 3 × 5</span></span>
+<span><span class="co">#&gt;   backend   min median `itr/sec` mem_alloc</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;   &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt; &lt;bch:byt&gt;</span></span>
+<span><span class="co">#&gt; 1 scalar   976.  1008.      986.        0B</span></span>
+<span><span class="co">#&gt; 2 sse4     913.   937.     1055.        0B</span></span>
+<span><span class="co">#&gt; 3 avx2     930.   952.     1038.        0B</span></span>
 <span></span>
 <span><span class="va">py_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"RMINIBWA_BENCH_PYTHONPATH"</span><span class="op">)</span></span>
 <span><span class="fu">py_run_string</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"import sys; sys.path.insert(0, %s)"</span>, <span class="fu"><a href="https://rdrr.io/r/base/shQuote.html" class="external-link">shQuote</a></span><span class="op">(</span><span class="va">py_path</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
@@ -235,10 +245,13 @@ SEXP rminibwa_capi_summary(SEXP align_x)
 <span><span class="fu"><a href="https://rdrr.io/r/base/dynload.html" class="external-link">dyn.load</a></span><span class="op">(</span><span class="va">rust_lib</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/invisible.html" class="external-link">invisible</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Foreign.html" class="external-link">.C</a></span><span class="op">(</span><span class="st">"rminibwa_bench_rust_init_c"</span>, <span class="va">bench_prefix</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="reference/simd_set_backend.html">simd_set_backend</a></span><span class="op">(</span><span class="st">"avx2"</span><span class="op">)</span></span>
+<span><span class="va">compare_backend</span> <span class="op">&lt;-</span> <span class="kw">if</span> <span class="op">(</span><span class="st">"avx2"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">internal_backends</span><span class="op">)</span> <span class="st">"avx2"</span> <span class="kw">else</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="va">internal_backends</span>, <span class="fl">1L</span><span class="op">)</span></span>
+<span><span class="va">compare_backend</span></span>
+<span><span class="co">#&gt; [1] "avx2"</span></span>
+<span><span class="fu"><a href="reference/simd_set_backend.html">simd_set_backend</a></span><span class="op">(</span><span class="va">compare_backend</span><span class="op">)</span></span>
 <span><span class="va">external_compare</span> <span class="op">&lt;-</span> <span class="fu">bench</span><span class="fu">::</span><span class="fu">mark</span><span class="op">(</span></span>
-<span>  rminibwa_avx2_count <span class="op">=</span> <span class="fu">Rminibwa</span><span class="fu">:::</span><span class="fu">mb_map_count</span><span class="op">(</span><span class="va">bench_query_raw</span>, <span class="va">bench_idx</span>, <span class="va">bench_opt</span>, <span class="va">bench_name_raw</span><span class="op">)</span>,</span>
-<span>  rminibwa_avx2_batch <span class="op">=</span> <span class="fu"><a href="reference/mb_align_n.html">mb_align_n</a></span><span class="op">(</span><span class="fu"><a href="reference/mb_map.html">mb_map</a></span><span class="op">(</span><span class="va">bench_query_raw</span>, <span class="va">bench_idx</span>, <span class="va">bench_opt</span>, <span class="va">bench_name_raw</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  rminibwa_count <span class="op">=</span> <span class="fu">Rminibwa</span><span class="fu">:::</span><span class="fu">mb_map_count</span><span class="op">(</span><span class="va">bench_query_raw</span>, <span class="va">bench_idx</span>, <span class="va">bench_opt</span>, <span class="va">bench_name_raw</span><span class="op">)</span>,</span>
+<span>  rminibwa_batch <span class="op">=</span> <span class="fu"><a href="reference/mb_align_n.html">mb_align_n</a></span><span class="op">(</span><span class="fu"><a href="reference/mb_map.html">mb_map</a></span><span class="op">(</span><span class="va">bench_query_raw</span>, <span class="va">bench_idx</span>, <span class="va">bench_opt</span>, <span class="va">bench_name_raw</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  python_pyo3 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">py_minibwa</span><span class="op">$</span><span class="fu">map</span><span class="op">(</span><span class="va">py_idx</span>, <span class="va">py_opt</span>, <span class="st">"read1"</span>, <span class="va">bench_query</span>, <span class="st">"none"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  rust_cdylib <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Foreign.html" class="external-link">.C</a></span><span class="op">(</span><span class="st">"rminibwa_bench_rust_map_count_c"</span>, <span class="va">bench_query</span>, out <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">integer</a></span><span class="op">(</span><span class="fl">1L</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">out</span>,</span>
 <span>  iterations <span class="op">=</span> <span class="fl">100</span>,</span>
@@ -246,6 +259,13 @@ SEXP rminibwa_capi_summary(SEXP align_x)
 <span>  time_unit <span class="op">=</span> <span class="st">"us"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">external_compare</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"expression"</span>, <span class="st">"min"</span>, <span class="st">"median"</span>, <span class="st">"itr/sec"</span>, <span class="st">"mem_alloc"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; # A tibble: 4 × 5</span></span>
+<span><span class="co">#&gt;   expression       min median `itr/sec` mem_alloc</span></span>
+<span><span class="co">#&gt;   &lt;bch:expr&gt;     &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt; &lt;bch:byt&gt;</span></span>
+<span><span class="co">#&gt; 1 rminibwa_count  927.   955.     1039.        0B</span></span>
+<span><span class="co">#&gt; 2 rminibwa_batch  923.   946.     1046.        0B</span></span>
+<span><span class="co">#&gt; 3 python_pyo3    1071.  1113.      888.    4.68KB</span></span>
+<span><span class="co">#&gt; 4 rust_cdylib     924.   950.     1046.   10.37KB</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/invisible.html" class="external-link">invisible</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Foreign.html" class="external-link">.C</a></span><span class="op">(</span><span class="st">"rminibwa_bench_rust_clear_c"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dynload.html" class="external-link">dyn.unload</a></span><span class="op">(</span><span class="va">rust_lib</span><span class="op">)</span></span>
