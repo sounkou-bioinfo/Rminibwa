@@ -28,19 +28,20 @@ jobs:
       - name: Install OS dependencies
         run: |
           dnf install -y --setopt=install_weak_deps=False \
-            zlib-devel pandoc qpdf texlive-scheme-medium
+            zlib-devel libuv-devel pandoc qpdf texlive-scheme-medium
 
       - name: Cache R library
         uses: actions/cache@v4
         with:
           path: /root/R-libs
-          key: r-libs-fedora-gcc16-${{ hashFiles('DESCRIPTION') }}
+          key: r-libs-fedora-gcc16-${{ hashFiles('DESCRIPTION', '.github/workflows/fedora-cran-check.yaml') }}
           restore-keys: |
             r-libs-fedora-gcc16-
 
       - name: Install R package dependencies
         run: |
           mkdir -p "$R_LIBS_USER"
+          rm -rf "$R_LIBS_USER"/00LOCK*
           R -q -e '
             .libPaths(c(Sys.getenv("R_LIBS_USER"), .libPaths()))
             options(repos = c(

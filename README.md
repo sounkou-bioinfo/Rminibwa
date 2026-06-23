@@ -1,58 +1,64 @@
 
+<!-- README.md is generated from README.Rmd. Please edit that file. -->
+
 # Rminibwa
 
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/sounkou-bioinfo/Rminibwa/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sounkou-bioinfo/Rminibwa/actions/workflows/R-CMD-check.yaml)
-[![R-universe](https://sounkou-bioinfo.r-universe.dev/badges/Rminibwa)](https://sounkou-bioinfo.r-universe.dev)
+[![R-universe](https://sounkou-bioinfo.r-universe.dev/badges/Rminibwa)](https://sounkou-bioinfo.r-universe.dev/Rminibwa)
 <!-- badges: end -->
 
-Rminibwa integrates [minibwa](https://github.com/lh3/minibwa), Heng Li’s
-genomic read aligner, with R through a packaged CLI, native C bindings,
-and a pinned vendored source tree with patch provenance.
+Rminibwa is an R interface to [minibwa](https://github.com/lh3/minibwa),
+Heng Li’s genomic read aligner. It vendors a pinned upstream source
+tree, builds a package-provided `minibwa` executable, and exposes a
+native C-backed API for in-process alignment work.
 
-The native path follows the `RsimdDispatch`/`SIMDe` style: use upstream
-minibwa algorithms, isolate SIMD-sensitive KSW kernels, stage backend
-objects at configure time, and select portable `scalar`, `sse4`, or
-`avx2` backends at runtime.
+The CLI wrappers are kept close to upstream behavior. The native
+interface uses raw query bytes, external-pointer alignment batches,
+ALTREP column views, and a small C header for downstream packages.
+SIMD-sensitive KSW code is compiled as separate staged backends and
+selected at runtime.
 
-## Install
+## Installation
 
 ``` r
-repos <- c(
-  sounkou = "https://sounkou-bioinfo.r-universe.dev",
-  CRAN = "https://cloud.r-project.org"
+install.packages(
+  "Rminibwa",
+  repos = c(
+    "https://sounkou-bioinfo.r-universe.dev",
+    "https://cloud.r-project.org"
+  )
 )
-install.packages("RsimdDispatch", repos = repos)
-
-# install.packages("remotes")
-remotes::install_github("sounkou-bioinfo/Rminibwa", repos = repos)
 ```
 
-Rminibwa builds and installs its own `minibwa` executable from the
-vendored source. The native C-library backend uses GNU make and zlib.
+From a local checkout:
 
-## CLI API
+``` bash
+R CMD INSTALL .
+```
+
+Rminibwa builds `minibwa` from the vendored source during package
+installation. No external `minibwa` executable is needed for normal use.
+
+## CLI wrapper
 
 ``` r
 library(Rminibwa)
 
-minibwa_available()
 minibwa_version()
-
 prefix <- minibwa_index("ref.fa", threads = 8)
 aln <- minibwa_map(prefix, "reads.fq.gz", format = "paf", threads = 8)
 ```
 
-`minibwa_map()` returns captured output when `output = NULL` and writes
-to a file when `output` is supplied.
+`minibwa_map()` captures output by default. Pass `output = "aln.sam"` or
+`output = "aln.paf"` to write directly to a file.
 
-## Native batch API
+## Native batches
 
-The native path keeps the hot alignment shape as a native columnar
-batch. R gets raw-byte inputs and ALTREP column views; downstream
-packages can consume the same batch through `inst/include/Rminibwa.h`
-without copying it into a data frame.
+The native path avoids data frames in the hot alignment shape.
+`mb_map()` returns an external-pointer batch; columns are exposed lazily
+to R and can also be read from C.
 
 ``` r
 library(Rminibwa)
@@ -79,227 +85,88 @@ c(
 #>          51           0         100         204
 ```
 
-## Downstream C API with Rtinycc
+## C consumers
 
-`Rminibwa.h` is installed for downstream C consumers. This example uses
-`R_GetCCallable()` through the header wrappers, then reads borrowed
-alignment columns directly. The same source is displayed here and
-compiled in the next chunk.
+`Rminibwa.h` is installed under `inst/include` and resolves the runtime
+API with `R_GetCCallable()`. Downstream packages can use
+`LinkingTo: Rminibwa` for the header and import Rminibwa at runtime
+before calling the function pointers.
 
 ``` c
-#define _Complex
-#include <limits.h>
-#include <stdint.h>
-#include <stddef.h>
-#include <R.h>
-#include <Rinternals.h>
 #include <Rminibwa.h>
 
-static int clamp_size_to_int(size_t x)
+SEXP summarize_alignment(SEXP x)
 {
-    return x > (size_t) INT_MAX ? INT_MAX : (int) x;
-}
-
-SEXP rminibwa_capi_summary(SEXP align_x)
-{
-    const RmbAlignBatch *batch = Rminibwa_align_from_sexp(align_x);
-    const size_t n = Rminibwa_align_n(batch);
+    const RmbAlignBatch *batch = Rminibwa_align_from_sexp(x);
+    size_t n = Rminibwa_align_n(batch);
     const int32_t *tid = Rminibwa_align_i32_col(batch, "tid");
-    const int32_t *qe = Rminibwa_align_i32_col(batch, "qe");
-    const int64_t *ts = Rminibwa_align_i64_col(batch, "ts");
-    size_t n_cigar_words = 0;
-    (void) Rminibwa_align_cigar_words(batch, &n_cigar_words);
-
-    SEXP out = PROTECT(Rf_allocVector(INTSXP, 4));
-    INTEGER(out)[0] = clamp_size_to_int(n);
-    INTEGER(out)[1] = n && tid ? tid[0] : NA_INTEGER;
-    INTEGER(out)[2] = n && qe ? qe[0] : NA_INTEGER;
-    INTEGER(out)[3] = clamp_size_to_int(n_cigar_words);
-
-    SEXP names = PROTECT(Rf_allocVector(STRSXP, 4));
-    SET_STRING_ELT(names, 0, Rf_mkChar("n"));
-    SET_STRING_ELT(names, 1, Rf_mkChar("first_tid"));
-    SET_STRING_ELT(names, 2, Rf_mkChar("first_qe"));
-    SET_STRING_ELT(names, 3, Rf_mkChar("cigar_words"));
-    Rf_setAttrib(out, R_NamesSymbol, names);
-
-    /* Touch one 64-bit column so this example covers both integer-width paths. */
-    if (n && ts && ts[0] < 0) INTEGER(out)[2] = NA_INTEGER;
-
-    UNPROTECT(2);
-    return out;
+    return Rf_ScalarInteger(n && tid ? tid[0] : NA_INTEGER);
 }
 ```
 
-``` r
-ffi <- Rtinycc::tcc_ffi() |>
-  Rtinycc::tcc_include(system.file("include", package = "Rminibwa")) |>
-  Rtinycc::tcc_source(rminibwa_capi_code) |>
-  Rtinycc::tcc_bind(
-    rminibwa_capi_summary = list(args = list("sexp"), returns = "sexp")
-  ) |>
-  Rtinycc::tcc_compile()
+A complete in-process consumer compiled with Rtinycc is in
+`vignettes/downstream-c-api.Rmd` and
+`inst/capi/rminibwa_tinycc_consumer.c`.
 
-ffi$rminibwa_capi_summary(aln)
-#>           n   first_tid    first_qe cigar_words 
-#>          51           0         100          51
-```
+## SIMD dispatch
 
-## Developer backend benchmarks
-
-`make rdm MINIBWA_BINDINGS_ROOT=/path/to/minibwa-bindings` builds local
-Python/Rust comparison artifacts and renders these opt-in developer
-benchmarks. The workload uses a chrM-sized random reference and an
-indel-mutated long read.
+The package follows the RsimdDispatch style: compile portable and
+ISA-specific objects separately, then select an available backend at
+runtime. On x86_64 this can include SSE4 and AVX2. On other
+architectures the portable backend is used.
 
 ``` r
-library(bench)
-library(reticulate)
-
-bench_td <- tempfile("rminibwa-bench-")
-dir.create(bench_td)
-set.seed(1)
-bench_ref <- paste(sample(c("A", "C", "G", "T"), 16569, replace = TRUE), collapse = "")
-delete_every <- function(x, every = 25L) {
-  y <- strsplit(x, "", fixed = TRUE)[[1L]]
-  paste(y[-seq(every, length(y), by = every)], collapse = "")
-}
-bench_fa <- file.path(bench_td, "ref.fa")
-writeLines(c(">chr1", bench_ref), bench_fa, useBytes = TRUE)
-bench_prefix <- file.path(bench_td, "idx")
-mb_index_build(bench_fa, bench_prefix, threads = 1L)
-bench_idx <- mb_index_load(bench_prefix)
-bench_opt <- mb_opts("sr", out_n = 0L)
-bench_query <- delete_every(substr(bench_ref, 1000L, 12000L), every = 25L)
-bench_query_raw <- charToRaw(bench_query)
-bench_name_raw <- charToRaw("read1")
-
-internal_backends <- intersect(c("scalar", "sse4", "avx2"), simd_info()$available_backends)
-ksw_counts <- do.call(rbind, lapply(internal_backends, function(backend) {
-  simd_set_backend(backend)
-  invisible(Rminibwa:::simd_counters(TRUE))
-  invisible(Rminibwa:::mb_map_count(bench_query_raw, bench_idx, bench_opt, bench_name_raw))
-  data.frame(backend = backend, as.list(Rminibwa:::simd_counters(FALSE)), check.names = FALSE)
-}))
-ksw_counts
-#>   backend extz2 extd2 ll_qinit ll_u8_core ll_i16_core ll_i16
-#> 1  scalar     0   438        0          0           0      0
-#> 2    sse4     0   438        0          0           0      0
-#> 3    avx2     0   438        0          0           0      0
-
-rminibwa_internal <- do.call(rbind, lapply(internal_backends, function(backend) {
-  simd_set_backend(backend)
-  out <- bench::mark(
-    count_only = Rminibwa:::mb_map_count(bench_query_raw, bench_idx, bench_opt, bench_name_raw),
-    iterations = 100,
-    check = FALSE,
-    time_unit = "us"
-  )
-  out$backend <- backend
-  out
-}))
-rminibwa_internal[, c("backend", "min", "median", "itr/sec", "mem_alloc")]
-#> # A tibble: 3 × 5
-#>   backend   min median `itr/sec` mem_alloc
-#>   <chr>   <dbl>  <dbl>     <dbl> <bch:byt>
-#> 1 scalar   976.  1008.      986.        0B
-#> 2 sse4     913.   937.     1055.        0B
-#> 3 avx2     930.   952.     1038.        0B
-
-py_path <- Sys.getenv("RMINIBWA_BENCH_PYTHONPATH")
-py_run_string(sprintf("import sys; sys.path.insert(0, %s)", shQuote(py_path)))
-py_minibwa <- import("minibwa", convert = FALSE)
-py_idx <- py_minibwa$Index$load(bench_prefix)
-py_opt <- py_minibwa$Opts("sr")
-invisible(py_opt$set_out_n(0L))
-
-rust_lib <- Sys.getenv("RMINIBWA_BENCH_RUST_LIB")
-dyn.load(rust_lib)
-invisible(.C("rminibwa_bench_rust_init_c", bench_prefix))
-
-compare_backend <- if ("avx2" %in% internal_backends) "avx2" else tail(internal_backends, 1L)
-compare_backend
-#> [1] "avx2"
-simd_set_backend(compare_backend)
-external_compare <- bench::mark(
-  rminibwa_count = Rminibwa:::mb_map_count(bench_query_raw, bench_idx, bench_opt, bench_name_raw),
-  rminibwa_batch = mb_align_n(mb_map(bench_query_raw, bench_idx, bench_opt, bench_name_raw)),
-  python_pyo3 = length(py_minibwa$map(py_idx, py_opt, "read1", bench_query, "none")),
-  rust_cdylib = .C("rminibwa_bench_rust_map_count_c", bench_query, out = integer(1L))$out,
-  iterations = 100,
-  check = FALSE,
-  time_unit = "us"
+info <- simd_info()
+data.frame(
+  selected = info$selected_backend,
+  compiled = paste(info$compiled_backends, collapse = ", "),
+  available = paste(info$available_backends, collapse = ", ")
 )
-external_compare[, c("expression", "min", "median", "itr/sec", "mem_alloc")]
-#> # A tibble: 4 × 5
-#>   expression       min median `itr/sec` mem_alloc
-#>   <bch:expr>     <dbl>  <dbl>     <dbl> <bch:byt>
-#> 1 rminibwa_count  927.   955.     1039.        0B
-#> 2 rminibwa_batch  923.   946.     1046.        0B
-#> 3 python_pyo3    1071.  1113.      888.    4.68KB
-#> 4 rust_cdylib     924.   950.     1046.   10.37KB
-
-invisible(.C("rminibwa_bench_rust_clear_c"))
-dyn.unload(rust_lib)
-simd_set_backend("auto")
-unlink(bench_td, recursive = TRUE)
+#>   selected           compiled          available
+#> 1     avx2 scalar, sse4, avx2 scalar, sse4, avx2
 ```
 
-## Pinned upstream workflow
+AVX-512 is not built by default. It is useful for experiments, but it
+would add a larger dispatch and CI surface. Use `make asm` to inspect
+the actual instruction families in local builds.
 
-The upstream pin lives in `tools/minibwa-upstream.dcf` and is installed
-as package metadata:
+## Benchmarks
 
-``` r
-Rminibwa::minibwa_upstream_info()[c("Version", "Commit")]
-#> $Version
-#> [1] "0.2-r379-dirty"
-#> 
-#> $Commit
-#> [1] "f0fd108456d459e5da3755f29c8700dc7f6fe0df"
-```
+`make rdm MINIBWA_BINDINGS_ROOT=/path/to/minibwa-bindings` renders the
+optional benchmark tables below. The workload uses a chrM-sized random
+reference and an indel-mutated read so KSW is exercised.
 
-The patch queue lives in `tools/patches/minibwa/`.
+KSW calls on the benchmark read:
 
-Build a local developer CLI from the pinned commit with the SIMDe patch
-queue applied:
+| backend | extz2 | extd2 | ll_qinit | ll_u8_core | ll_i16_core | ll_i16 |
+|:--------|------:|------:|---------:|-----------:|------------:|-------:|
+| scalar  |     0 |   438 |        0 |          0 |           0 |      0 |
+| sse4    |     0 |   438 |        0 |          0 |           0 |      0 |
+| avx2    |     0 |   438 |        0 |          0 |           0 |      0 |
 
-``` sh
-tools/build-minibwa-cli.sh
-```
+Count-only mapper timing by staged backend:
 
-Rminibwa itself installs a package-built `minibwa` executable during
-package installation.
+| backend | min       | median    | itr/sec | mem_alloc |
+|:--------|:----------|:----------|:--------|:----------|
+| scalar  | 1042.4 us | 1074.5 us | 928.1   | 0B        |
+| sse4    | 1000.4 us | 1013.2 us | 981.0   | 0B        |
+| avx2    | 1051.7 us | 1064.0 us | 932.3   | 0B        |
 
-Refresh the vendored source tree with:
+External comparison using Rminibwa backend `avx2`:
 
-``` sh
-Rscript tools/vendor-minibwa.R refresh
-```
-
-The vendoring script records the upstream commit, archive checksum, and
-applied patches in `src/vendor/minibwa/RMINIBWA_VENDOR.dcf`.
-
-## Shape
-
-The native implementation is deliberately narrow:
-
-1.  keep the CLI wrapper as the compatibility oracle;
-2.  load `.l2b`/`.mbw` indexes into R external pointers;
-3.  expose `mb_map()` through `.Call()` with raw-byte inputs and native
-    columnar batches;
-4.  dispatch the KSW alignment kernels through a staged
-    `RsimdDispatch`/`SIMDe`-style runtime-selection pattern.
-
-See the package vignettes for details.
+| expression     | min       | median    | itr/sec | mem_alloc |
+|:---------------|:----------|:----------|:--------|:----------|
+| rminibwa_count | 1035.4 us | 1067.7 us | 934.3   | 0B        |
+| rminibwa_batch | 1005.0 us | 1037.6 us | 958.1   | 0B        |
+| python_pyo3    | 1170.8 us | 1202.2 us | 822.2   | 4.68KB    |
+| rust_cdylib    | 1026.3 us | 1036.0 us | 960.8   | 10.37KB   |
 
 ## Development
 
-``` sh
-make rd       # roxygen docs and NAMESPACE
-make readme   # evaluate README.Rmd and write README.md
-make test
-make check
-make pkgdown
+``` bash
+make rd       # roxygen docs
+make test0    # tinytest suite against the installed package
+make check    # R CMD check --as-cran --no-manual
+make pkgdown  # local site build
 make asm      # inspect staged backend assembly
 ```
