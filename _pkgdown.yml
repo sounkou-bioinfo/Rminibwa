@@ -12,3 +12,4 @@ articles:
     contents:
       - simde-dispatch
       - vendoring-minibwa
+      - downstream-c-api

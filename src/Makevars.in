@@ -1,0 +1,34 @@
+VENDOR = vendor/minibwa
+STAGED_OBJECTS = @RMINIBWA_STAGED_OBJECTS@
+
+PKG_CPPFLAGS = -I. -I../inst/include -I$(VENDOR) @RMINIBWA_SIMDE_CPPFLAGS@ -include rminibwa_r_redirect.h -DRMINIBWA_BUILDING -DHAVE_KALLOC -DUSE_GPL
+PKG_LIBS = $(STAGED_OBJECTS) -lz -lm -lpthread
+
+MINIBWA_OBJS = \
+	$(VENDOR)/kommon.o \
+	$(VENDOR)/kalloc.o \
+	$(VENDOR)/bwt.o \
+	$(VENDOR)/l2bit.o \
+	$(VENDOR)/options.o \
+	$(VENDOR)/seed.o \
+	$(VENDOR)/map-algo.o \
+	$(VENDOR)/lchain.o \
+	$(VENDOR)/align.o \
+	$(VENDOR)/pe.o \
+	$(VENDOR)/cs.o \
+	$(VENDOR)/format.o \
+	$(VENDOR)/kthread.o \
+	$(VENDOR)/libsais.o \
+	$(VENDOR)/libsais64.o \
+	$(VENDOR)/index.o \
+	$(VENDOR)/bseq.o \
+	$(VENDOR)/QSufSort.o \
+	$(VENDOR)/bwtgen.o
+
+OBJECTS = r_api.o altrep.o ksw_dispatch.o registration.o $(MINIBWA_OBJS)
+
+all: $(SHLIB)
+
+clean:
+	rm -f $(OBJECTS) $(SHLIB) $(STAGED_OBJECTS) symbols.rds
+	rm -rf rmb-ksw

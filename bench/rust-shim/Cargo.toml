@@ -1,0 +1,12 @@
+[package]
+name = "rminibwa-bench-rust"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "rminibwa_bench_rust"
+crate-type = ["cdylib"]
+
+[dependencies]
+minibwa = { path = "/tmp/minibwa-bindings-recon/minibwa" }

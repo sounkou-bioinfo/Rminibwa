@@ -10,25 +10,31 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>",
-  eval = FALSE
+  comment = "#>"
 )
 ```
 
-Rminibwa will follow the `RsimdDispatch`/`SIMDe` design for native alignment
-kernels. SSE4.2 is common on current x86_64 machines, but runtime dispatch is
-still useful for explicit diagnostics, fallback behavior, ARM/NEON, and future
-wasm builds.
+Rminibwa follows the `RsimdDispatch`/`SIMDe` downstream-package pattern for the
+SIMD-sensitive minibwa KSW kernels:
+
+- `configure` probes compiler support;
+- backend objects are staged under `src/rmb-ksw/`;
+- `src/Makevars.in` links those staged objects through `PKG_LIBS`;
+- ordinary minibwa sources are compiled once with baseline package flags;
+- runtime selection switches between compiled and CPU-supported backends.
+
+This avoids putting ISA flags such as `-mavx2` into global `PKG_CPPFLAGS` or
+`PKG_CFLAGS`.
 
 ## Boundary
 
-Dispatch starts at the SIMD-sensitive KSW alignment kernels:
+Dispatch starts at the KSW functions called by minibwa:
 
-- `ksw_extz2_sse()`
-- `ksw_extd2_sse()`
-- selected symbols from `ksw2_ll_sse.c` if a future path needs them
+- `ksw_extz2_sse()`;
+- `ksw_extd2_sse()`;
+- `ksw_ll_qinit()` and the `ksw_ll_*` helpers.
 
-The rest of minibwa should stay baseline-compiled once:
+The rest of minibwa stays baseline-compiled once:
 
 - index loading;
 - BWT and seeding;
@@ -37,51 +43,50 @@ The rest of minibwa should stay baseline-compiled once:
 - formatting;
 - R external-pointer glue.
 
-## Source adaptation
+## Backends
 
-Upstream currently selects native SSE or the small `s2n-lite.h` NEON bridge in
-individual KSW files. Rminibwa carries a small opt-in patch that adds an
-`RMINIBWA_USE_SIMDE` include branch. Upstream behavior is unchanged unless our
-build defines that macro.
+Rminibwa currently exposes:
 
-```c
-#define RMINIBWA_USE_SIMDE
-#define SIMDE_ENABLE_NATIVE_ALIASES
-#include <simde/x86/sse2.h>
-#include <simde/x86/sse4.1.h>
-```
+- `scalar`: portable SIMDe fallback compiled with native intrinsics disabled and no ISA flags;
+- `sse4`: native SSE4.1/SIMDe-alias build of the KSW files;
+- `avx2`: native AVX2 build, including the widened dual-gap `extd2` kernel.
 
-## Backend names
-
-Initial backend names should be conservative:
-
-- `portable`: SIMDe fallback with no CPU-specific flags;
-- `sse42`: x86_64 native SSE4.2/POPCNT build;
-- `neon`: ARM native NEON build;
-- `wasm128`: future WebAssembly SIMD128 build.
-
-Avoid exposing `avx2` unless we add real AVX2-width kernels. The upstream KSW
-code is SSE-width, so an AVX2 label would be misleading without a real AVX2
-implementation.
+The `avx2` backend uses the wide `ksw2_extd2_wide.c` patch for the dominant
+dual-gap gap-filling path and uses AVX2-compiled KSW objects for the remaining
+KSW entry points.
 
 ## R surface
 
-Expose the same style as `RsimdDispatch`:
-
-```r
-simd_backend()
-simd_set_backend("auto")
+```{r}
+library(Rminibwa)
 simd_info()
 ```
 
-The info object should report compiled backends, CPU-supported backends,
-selected backend, and per-operation selected backend.
+Select a backend explicitly for diagnostics or benchmarks:
+
+```{r}
+old <- simd_backend()
+simd_set_backend("scalar")
+simd_backend()
+simd_set_backend("auto")
+```
+
+`simd_set_backend()` errors if the requested backend was not compiled or is not
+supported by the current CPU/runtime.
 
 ## Validation
 
-For every backend:
+For every available backend, Rminibwa runs the same native mapping fixture in
+`tinytest` and checks that the native alignment batch and ALTREP column accessors
+remain valid. The README `make rdm` path additionally benchmarks:
 
-1. run the same native mapping fixture;
-2. compare to the pinned upstream CLI output;
-3. compare portable SIMDe vs native SSE/NEON results;
-4. log selected backend and compiled backend metadata in tests.
+1. internal Rminibwa-only `scalar` vs `sse4` vs `avx2`; and
+2. Rminibwa AVX2 vs locally built Python/Rust bindings compiled with native AVX2
+   codegen.
+
+Backend timing must use a workload that actually reaches KSW. Very short exact
+matches can be resolved by seeding/chaining and ungapped fast paths without a
+single `ksw_ext*` or `ksw_ll*` call, so apparent `scalar`/`sse4`/`avx2`
+differences on those examples are just end-to-end mapper noise. The developer
+README benchmark uses an indel-mutated random read and records internal KSW call
+counters before timing count-only mapping.

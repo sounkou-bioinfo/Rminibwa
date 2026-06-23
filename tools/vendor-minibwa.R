@@ -102,12 +102,23 @@ apply_patches <- function(path) {
   ps <- patches()
   if (!length(ps)) return(character())
   if (!nzchar(Sys.which("git"))) stop("git is required to apply minibwa patches", call. = FALSE)
-  for (patch in ps) {
-    message("Applying vendor patch: ", basename(patch))
-    run("git", c("apply", "--check", patch), wd = path)
-    run("git", c("apply", "--whitespace=nowarn", patch), wd = path)
-  }
+  helper <- file.path(root, "tools", "apply-minibwa-patches.sh")
+  if (!file.exists(helper)) stop("Missing patch helper: ", helper, call. = FALSE)
+  run(helper, path, wd = root)
   basename(ps)
+}
+
+prune_vendor_tree <- function(path) {
+  # Keep top-level upstream source, headers, docs, and license notices. Drop
+  # repository metadata, test data, manuscript assets, examples, and mimalloc;
+  # Rminibwa links the ordinary allocator and compiles the library objects it
+  # needs explicitly from Makevars.
+  unlink(file.path(path, c(".git", ".github", ".gitignore", "api-test", "test", "tex", "mimalloc")),
+         recursive = TRUE, force = TRUE)
+  unlink(list.files(path, pattern = "\\.(o|a|so|dll|dylib|exe)$", full.names = TRUE),
+         force = TRUE)
+  unlink(file.path(path, "minibwa"), force = TRUE)
+  invisible(TRUE)
 }
 
 write_vendor_metadata <- function(path, archive_sha, applied_patches) {
@@ -123,6 +134,7 @@ write_vendor_metadata <- function(path, archive_sha, applied_patches) {
     paste0("VendoredSource: src/vendor/", component),
     paste0("PatchDirectory: ", field("PatchDirectory")),
     paste0("Patches: ", if (length(applied_patches)) paste(applied_patches, collapse = ", ") else "none"),
+    "VendoredScope: top-level minibwa C sources and headers; repository metadata, test data, manuscript assets, examples, and mimalloc omitted",
     paste0("VendoredAtUTC: ", format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")),
     paste0("License: ", field("License"))
   )
@@ -148,6 +160,7 @@ unpack_archive <- function() {
 
   verify_version(target_dir)
   applied <- apply_patches(target_dir)
+  prune_vendor_tree(target_dir)
   write_vendor_metadata(target_dir, sha256_file(archive_path), applied)
   message("Vendored ", component, " ", version, " commit ", commit)
   message("Wrote ", target_dir)

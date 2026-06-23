@@ -27,16 +27,36 @@ if [ "${#patches[@]}" -eq 0 ]; then
   exit 0
 fi
 
+git_top="$(git -C "$checkout" rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -n "$git_top" ]; then
+  checkout_rel="$(realpath --relative-to="$git_top" "$checkout")"
+else
+  echo "No Git worktree found for patch application: $checkout" >&2
+  exit 1
+fi
+
+apply_check() {
+  git -C "$git_top" apply --check --directory="$checkout_rel" "$1"
+}
+
+apply_reverse_check() {
+  git -C "$git_top" apply --reverse --check --directory="$checkout_rel" "$1"
+}
+
+apply_patch() {
+  git -C "$git_top" apply --whitespace=nowarn --directory="$checkout_rel" "$1"
+}
+
 for patch in "${patches[@]}"; do
   name="$(basename "$patch")"
-  if git -C "$checkout" apply --check "$patch" >/dev/null 2>&1; then
+  if apply_check "$patch" >/dev/null 2>&1; then
     echo "Applying $name"
-    git -C "$checkout" apply --whitespace=nowarn "$patch"
-  elif git -C "$checkout" apply --reverse --check "$patch" >/dev/null 2>&1; then
+    apply_patch "$patch"
+  elif apply_reverse_check "$patch" >/dev/null 2>&1; then
     echo "Already applied $name"
   else
     echo "Patch does not apply cleanly: $name" >&2
-    git -C "$checkout" apply --check "$patch"
+    apply_check "$patch"
     exit 1
   fi
 done

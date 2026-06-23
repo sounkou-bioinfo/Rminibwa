@@ -4,15 +4,18 @@
 \name{Rminibwa-package}
 \alias{Rminibwa}
 \alias{Rminibwa-package}
-\title{Rminibwa: R Interface and Runtime Dispatch Experiments for minibwa}
+\title{Rminibwa: Native R bindings for minibwa}
 \description{
-Rminibwa is an R-facing package for exploring command-line and native-library
-integration with the upstream \code{minibwa} short-read aligner.
+Rminibwa wraps the upstream \code{minibwa} short-read aligner with native C
+bindings, raw-vector query input, external-pointer alignment batches, ALTREP
+column views, downstream C-callable accessors, and runtime-dispatched KSW
+SIMD backends.
 }
 \seealso{
 Useful links:
 \itemize{
   \item \url{https://github.com/sounkou-bioinfo/Rminibwa}
+  \item \url{https://sounkou-bioinfo.github.io/Rminibwa/}
   \item Report bugs at \url{https://github.com/sounkou-bioinfo/Rminibwa/issues}
 }
 
@@ -22,7 +25,10 @@ Useful links:
 
 Other contributors:
 \itemize{
-  \item Dana-Farber Cancer Institute (Copyright holder of upstream minibwa, when vendored or linked) [copyright holder]
+  \item Dana-Farber Cancer Institute (Copyright holder of upstream minibwa) [copyright holder]
+  \item Ilya Grebnov (libsais copyright holder) [copyright holder]
+  \item N. Jesper Larsson (QSufSort copyright holder) [copyright holder]
+  \item Wong Chi Kwong (BWT-SW/bwtgen copyright holder) [copyright holder]
 }
 
 }

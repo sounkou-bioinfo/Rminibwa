@@ -1,28 +1,41 @@
 Package: Rminibwa
-Title: R Interface and Runtime Dispatch Experiments for 'minibwa'
+Title: Native R Bindings and SIMD Dispatch for 'minibwa'
 Version: 0.0.0.9000
 Authors@R: c(
     person(given = "Sounkou Mahamane", family = "Toure",
       email = "sounkoutoure@gmail.com", role = c("aut", "cre")),
     person(given = "Dana-Farber Cancer Institute", role = "cph",
-      comment = "Copyright holder of upstream minibwa, when vendored or linked")
+      comment = "Copyright holder of upstream minibwa"),
+    person(given = "Ilya", family = "Grebnov", role = "cph",
+      comment = "libsais copyright holder"),
+    person(given = "N. Jesper", family = "Larsson", role = "cph",
+      comment = "QSufSort copyright holder"),
+    person(given = "Wong", family = "Chi Kwong", role = "cph",
+      comment = "BWT-SW/bwtgen copyright holder")
   )
-Description: Provides an R-facing home for experiments around the 'minibwa'
-    short-read aligner. The initial package exposes small wrappers around the
-    'minibwa' command line interface while documenting the intended native C API
-    and 'SIMDe'-backed runtime Single Instruction Multiple Data ('SIMD')
-    dispatch shape for a future library-backed implementation.
-License: MIT + file LICENSE
+Description: Provides native R bindings to the 'minibwa' short-read aligner
+    with raw-vector query input, external-pointer alignment batches, ALTREP
+    column views, and an installed C API for downstream packages. The package
+    builds staged Single Instruction Multiple Data ('SIMD') KSW backends and
+    selects portable scalar, SSE4, or AVX2 code at runtime without global
+    instruction-set compiler flags.
+License: GPL (>= 2)
+Depends:
+    R (>= 4.0.0)
 SystemRequirements: GNU make, zlib
+LinkingTo:
+    RsimdDispatch (>= 0.1.2.9001)
 Suggests:
     knitr,
     rmarkdown,
-    RsimdDispatch,
     roxygen2,
+    Rtinycc,
     tinytest
 VignetteBuilder: knitr
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-URL: https://github.com/sounkou-bioinfo/Rminibwa
+Additional_repositories: https://sounkou-bioinfo.r-universe.dev
+URL: https://github.com/sounkou-bioinfo/Rminibwa,
+    https://sounkou-bioinfo.github.io/Rminibwa/
 BugReports: https://github.com/sounkou-bioinfo/Rminibwa/issues

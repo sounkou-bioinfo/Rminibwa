@@ -10,8 +10,10 @@
 ^README\.Rmd$
 ^README\.html$
 ^_pkgdown\.yml$
+^cran-comments\.md$
 ^docs$
 ^pkgdown$
+^bench$
 ^vignettes/.*\.html$
 ^doc$
 ^Meta$
@@ -22,6 +24,9 @@
 ^config\.log$
 ^src/Makevars$
 ^src/Makevars\.win$
+^src/rminibwa_simd_config\.h$
+^src/rmb-ksw$
+^src/rmb-ksw/.*$
 ^src/.*\.o$
 ^src/.*\.so$
 ^src/.*\.dll$
