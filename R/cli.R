@@ -6,23 +6,33 @@ has_path_separator <- function(path) {
   grepl("/", path, fixed = TRUE) || grepl("\\\\", path)
 }
 
-#' Locate the minibwa executable
+packaged_minibwa_path <- function() {
+  exe <- if (.Platform$OS.type == "windows") "minibwa.exe" else "minibwa"
+  system.file("bin", exe, package = "Rminibwa", mustWork = FALSE)
+}
+
+#' Locate the packaged minibwa executable
 #'
 #' `minibwa_path()` resolves the command-line executable used by the CLI-backed
-#' helpers. By default it first consults the `RMINIBWA_MINIBWA` environment
-#' variable and otherwise searches for `minibwa` on `PATH`.
+#' helpers. By default it returns the executable built from the vendored minibwa
+#' sources and installed with Rminibwa. Supplying `path` is mainly for developer
+#' comparisons against another minibwa build.
 #'
-#' @param path Executable name or path.
+#' @param path Optional executable name or path. When `NULL`, use Rminibwa's
+#'   packaged minibwa executable.
 #' @param must_work If `TRUE`, throw an error when the executable cannot be
 #'   found.
 #'
 #' @return A scalar character path, or `NA_character_` when `must_work = FALSE`
 #'   and no executable is found.
 #' @export
-minibwa_path <- function(path = Sys.getenv("RMINIBWA_MINIBWA", unset = "minibwa"),
-                         must_work = TRUE) {
+minibwa_path <- function(path = NULL, must_work = TRUE) {
+  if (is.null(path)) {
+    path <- Sys.getenv("RMINIBWA_MINIBWA", unset = "")
+    if (!nzchar(path)) path <- packaged_minibwa_path()
+  }
   if (!is.character(path) || length(path) != 1L || is.na(path) || !nzchar(path)) {
-    stop("`path` must be a non-empty scalar character value.", call. = FALSE)
+    stop("`path` must be NULL or a non-empty scalar character value.", call. = FALSE)
   }
 
   resolved <- ""
@@ -36,11 +46,7 @@ minibwa_path <- function(path = Sys.getenv("RMINIBWA_MINIBWA", unset = "minibwa"
 
   if (!nzchar(resolved)) {
     if (isTRUE(must_work)) {
-      stop(
-        "Could not find the minibwa executable. Install minibwa, add it to PATH, ",
-        "or set RMINIBWA_MINIBWA=/path/to/minibwa.",
-        call. = FALSE
-      )
+      stop("Could not find the minibwa executable built with Rminibwa.", call. = FALSE)
     }
     return(NA_character_)
   }
@@ -53,7 +59,7 @@ minibwa_path <- function(path = Sys.getenv("RMINIBWA_MINIBWA", unset = "minibwa"
 #' @inheritParams minibwa_path
 #' @return `TRUE` when an executable can be resolved, otherwise `FALSE`.
 #' @export
-minibwa_available <- function(path = Sys.getenv("RMINIBWA_MINIBWA", unset = "minibwa")) {
+minibwa_available <- function(path = NULL) {
   !is.na(minibwa_path(path = path, must_work = FALSE))
 }
 

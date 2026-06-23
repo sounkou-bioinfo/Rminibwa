@@ -13,7 +13,7 @@ Authors@R: c(
     person(given = "Wong", family = "Chi Kwong", role = "cph",
       comment = "BWT-SW/bwtgen copyright holder")
   )
-Description: Provides native R bindings to the 'minibwa' short-read aligner
+Description: Provides native R bindings to the 'minibwa' genomic read aligner
     with raw-vector query input, external-pointer alignment batches, ALTREP
     column views, and an installed C API for downstream packages. The package
     builds staged Single Instruction Multiple Data ('SIMD') KSW backends and

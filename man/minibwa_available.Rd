@@ -4,10 +4,11 @@
 \alias{minibwa_available}
 \title{Test whether the minibwa CLI is available}
 \usage{
-minibwa_available(path = Sys.getenv("RMINIBWA_MINIBWA", unset = "minibwa"))
+minibwa_available(path = NULL)
 }
 \arguments{
-\item{path}{Executable name or path.}
+\item{path}{Optional executable name or path. When \code{NULL}, use Rminibwa's
+packaged minibwa executable.}
 }
 \value{
 \code{TRUE} when an executable can be resolved, otherwise \code{FALSE}.

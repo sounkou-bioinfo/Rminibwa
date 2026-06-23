@@ -50,8 +50,10 @@ Build a local developer CLI with the SIMDe patch queue applied:
 
 ```sh
 tools/build-minibwa-cli.sh
-export RMINIBWA_MINIBWA=$PWD/.local/bin/minibwa
 ```
+
+The installed R package builds its own `minibwa` executable from the vendored
+source; this developer helper is only for manual upstream comparisons.
 
 By default the developer build uses:
 

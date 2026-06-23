@@ -9,4 +9,4 @@ name = "rminibwa_bench_rust"
 crate-type = ["cdylib"]
 
 [dependencies]
-minibwa = { path = "/tmp/minibwa-bindings-recon/minibwa" }
+minibwa = { path = "@MINIBWA_RUST_CRATE@" }

@@ -6,7 +6,7 @@
 \alias{Rminibwa-package}
 \title{Rminibwa: Native R bindings for minibwa}
 \description{
-Rminibwa wraps the upstream \code{minibwa} short-read aligner with native C
+Rminibwa wraps the upstream \code{minibwa} genomic read aligner with native C
 bindings, raw-vector query input, external-pointer alignment batches, ALTREP
 column views, downstream C-callable accessors, and runtime-dispatched KSW
 SIMD backends.

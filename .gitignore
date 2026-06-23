@@ -20,6 +20,7 @@ src/Makevars
 src/Makevars.win
 src/rminibwa_simd_config.h
 src/rmb-ksw/
+src/rmb-cli/
 config.log
 .sync/
 .local/
@@ -27,6 +28,7 @@ src/vendor/_archives/
 vignettes/*.html
 bench/python/
 bench/rust-shim/target/
+bench/rust-shim/Cargo.toml
 bench/rust-shim/Cargo.lock
 /doc/
 /Meta/

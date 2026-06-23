@@ -27,6 +27,8 @@
 ^src/rminibwa_simd_config\.h$
 ^src/rmb-ksw$
 ^src/rmb-ksw/.*$
+^src/rmb-cli$
+^src/rmb-cli/.*$
 ^src/.*\.o$
 ^src/.*\.so$
 ^src/.*\.dll$

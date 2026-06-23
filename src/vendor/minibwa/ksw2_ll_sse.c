@@ -101,23 +101,23 @@ void *ksw_ll_qinit(void *km, int size, int qlen, const uint8_t *query, int m, co
 
 static inline int ksw_le_u8(__m128i a, __m128i b)
 {
-#if defined(__ARM_NEON)
-	return vmaxvq_u8(vqsubq_u8(a, b)) == 0;
-#elif defined(__SSE2__)
+#if defined(RMINIBWA_USE_SIMDE) || defined(__SSE2__)
 	return _mm_movemask_epi8(_mm_cmpeq_epi8(_mm_subs_epu8(a, b), _mm_setzero_si128())) == 0xffff;
+#elif defined(__ARM_NEON)
+	return vmaxvq_u8(vqsubq_u8(a, b)) == 0;
 #endif
 }
 
 static inline int ksw_max_u8(__m128i x)
 {
-#if defined(__ARM_NEON)
-	return vmaxvq_u8(x);
-#elif defined(__SSE2__)
+#if defined(RMINIBWA_USE_SIMDE) || defined(__SSE2__)
 	x = _mm_max_epu8(x, _mm_srli_si128(x, 8));
 	x = _mm_max_epu8(x, _mm_srli_si128(x, 4));
 	x = _mm_max_epu8(x, _mm_srli_si128(x, 2));
 	x = _mm_max_epu8(x, _mm_srli_si128(x, 1));
 	return _mm_extract_epi16(x, 0) & 0x00ff;
+#elif defined(__ARM_NEON)
+	return vmaxvq_u8(x);
 #endif
 }
 
@@ -226,22 +226,22 @@ end_loop_u8:
 
 static inline int ksw_le_epi16(__m128i a, __m128i b)
 {
-#if defined(__ARM_NEON)
-	return vmaxvq_u16(vcgtq_s16(vreinterpretq_s16_u8(a), vreinterpretq_s16_u8(b))) == 0;
-#elif defined(__SSE2__)
+#if defined(RMINIBWA_USE_SIMDE) || defined(__SSE2__)
 	return _mm_movemask_epi8(_mm_cmpgt_epi16(a, b)) == 0;
+#elif defined(__ARM_NEON)
+	return vmaxvq_u16(vcgtq_s16(vreinterpretq_s16_u8(a), vreinterpretq_s16_u8(b))) == 0;
 #endif
 }
 
 static inline int ksw_max_i16(__m128i x)
 {
-#if defined(__ARM_NEON)
-	return vmaxvq_s16(vreinterpretq_s16_u8(x));
-#elif defined(__SSE2__)
+#if defined(RMINIBWA_USE_SIMDE) || defined(__SSE2__)
 	x = _mm_max_epi16(x, _mm_srli_si128(x, 8));
 	x = _mm_max_epi16(x, _mm_srli_si128(x, 4));
 	x = _mm_max_epi16(x, _mm_srli_si128(x, 2));
 	return _mm_extract_epi16(x, 0);
+#elif defined(__ARM_NEON)
+	return vmaxvq_s16(vreinterpretq_s16_u8(x));
 #endif
 }
 

@@ -2,15 +2,13 @@
 % Please edit documentation in R/cli.R
 \name{minibwa_path}
 \alias{minibwa_path}
-\title{Locate the minibwa executable}
+\title{Locate the packaged minibwa executable}
 \usage{
-minibwa_path(
-  path = Sys.getenv("RMINIBWA_MINIBWA", unset = "minibwa"),
-  must_work = TRUE
-)
+minibwa_path(path = NULL, must_work = TRUE)
 }
 \arguments{
-\item{path}{Executable name or path.}
+\item{path}{Optional executable name or path. When \code{NULL}, use Rminibwa's
+packaged minibwa executable.}
 
 \item{must_work}{If \code{TRUE}, throw an error when the executable cannot be
 found.}
@@ -21,6 +19,7 @@ and no executable is found.
 }
 \description{
 \code{minibwa_path()} resolves the command-line executable used by the CLI-backed
-helpers. By default it first consults the \code{RMINIBWA_MINIBWA} environment
-variable and otherwise searches for \code{minibwa} on \code{PATH}.
+helpers. By default it returns the executable built from the vendored minibwa
+sources and installed with Rminibwa. Supplying \code{path} is mainly for developer
+comparisons against another minibwa build.
 }

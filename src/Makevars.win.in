@@ -1,8 +1,12 @@
 VENDOR = vendor/minibwa
 STAGED_OBJECTS = @RMINIBWA_STAGED_OBJECTS@
+CLI_DIR = rmb-cli
+CLI_BIN = $(CLI_DIR)/minibwa.exe
 
 PKG_CPPFLAGS = -I. -I../inst/include -I$(VENDOR) @RMINIBWA_SIMDE_CPPFLAGS@ -include rminibwa_r_redirect.h -DRMINIBWA_BUILDING -DHAVE_KALLOC -DUSE_GPL
 PKG_LIBS = $(STAGED_OBJECTS) -lwinpthread -lz -lm
+CLI_CPPFLAGS = -I$(VENDOR) @RMINIBWA_SIMDE_CPPFLAGS@ -DRMINIBWA_USE_SIMDE -DSIMDE_NO_NATIVE -DHAVE_KALLOC -DUSE_GPL
+CLI_LIBS = -lwinpthread -lz -lm
 
 MINIBWA_OBJS = \
 	$(VENDOR)/kommon.o \
@@ -27,8 +31,45 @@ MINIBWA_OBJS = \
 
 OBJECTS = r_api.o altrep.o ksw_dispatch.o registration.o $(MINIBWA_OBJS)
 
-all: $(SHLIB)
+CLI_SRCS = \
+	kommon.c \
+	kalloc.c \
+	bwt.c \
+	l2bit.c \
+	options.c \
+	seed.c \
+	map-algo.c \
+	lchain.c \
+	align.c \
+	pe.c \
+	cs.c \
+	format.c \
+	kthread.c \
+	libsais.c \
+	libsais64.c \
+	index.c \
+	bseq.c \
+	QSufSort.c \
+	bwtgen.c \
+	map-main.c \
+	fastmap.c \
+	ksw2_extz2_sse.c \
+	ksw2_extd2_sse.c \
+	ksw2_ll_sse.c \
+	main.c
+CLI_OBJS = $(addprefix $(CLI_DIR)/,$(CLI_SRCS:.c=.o))
+
+all: $(SHLIB) $(CLI_BIN)
+
+$(CLI_DIR):
+	mkdir -p $(CLI_DIR)
+
+$(CLI_DIR)/%.o: $(VENDOR)/%.c | $(CLI_DIR)
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(CLI_CPPFLAGS) -c $< -o $@
+
+$(CLI_BIN): $(CLI_OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(CLI_LIBS)
 
 clean:
 	rm -f $(OBJECTS) $(SHLIB) $(STAGED_OBJECTS) symbols.rds
-	rm -rf rmb-ksw
+	rm -rf rmb-ksw $(CLI_DIR)

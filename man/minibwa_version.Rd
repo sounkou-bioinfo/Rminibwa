@@ -7,7 +7,8 @@
 minibwa_version(path = minibwa_path())
 }
 \arguments{
-\item{path}{Executable name or path.}
+\item{path}{Optional executable name or path. When \code{NULL}, use Rminibwa's
+packaged minibwa executable.}
 }
 \value{
 A scalar character version string.

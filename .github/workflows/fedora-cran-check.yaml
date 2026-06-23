@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/r-hub/containers/gcc16:latest
+    env:
+      R_LIBS_USER: /root/R-libs
 
     steps:
       - uses: actions/checkout@v4
@@ -38,27 +40,25 @@ jobs:
 
       - name: Install R package dependencies
         run: |
-          mkdir -p /root/R-libs
-          echo "R_LIBS_USER=/root/R-libs" >> ~/.Renviron
+          mkdir -p "$R_LIBS_USER"
           R -q -e '
+            .libPaths(c(Sys.getenv("R_LIBS_USER"), .libPaths()))
             options(repos = c(
               sounkou = "https://sounkou-bioinfo.r-universe.dev",
               CRAN = "https://cloud.r-project.org"
             ))
             pkgs <- c("knitr", "rmarkdown", "RsimdDispatch", "Rtinycc", "tinytest")
             need <- setdiff(pkgs,
-              rownames(installed.packages(lib.loc = "/root/R-libs")))
-            if (length(need)) install.packages(need, lib = "/root/R-libs")
+              rownames(installed.packages(lib.loc = Sys.getenv("R_LIBS_USER"))))
+            if (length(need)) install.packages(need, lib = Sys.getenv("R_LIBS_USER"))
+            stopifnot(requireNamespace("rmarkdown", quietly = TRUE))
           '
 
       - name: R CMD build
-        run: |
-          echo "R_LIBS_USER=/root/R-libs" >> ~/.Renviron
-          R CMD build .
+        run: R CMD build .
 
       - name: R CMD check --as-cran
         run: |
-          echo "R_LIBS_USER=/root/R-libs" >> ~/.Renviron
           PKG=$(ls -t Rminibwa_*.tar.gz | head -n1)
           R CMD check --as-cran --no-manual "$PKG"
 
