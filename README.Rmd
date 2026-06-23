@@ -8,7 +8,6 @@ knitr::opts_chunk$set(
   comment = "#>",
   fig.path = "man/figures/README-"
 )
-knitr::knit_engines$set(rtinycc = Rtinycc:::rtinycc_engine)
 ```
 
 # Rminibwa
@@ -89,54 +88,21 @@ c(
 
 ## Downstream C API with Rtinycc
 
-`Rminibwa.h` is installed for downstream C consumers. This inline C chunk uses
+`Rminibwa.h` is installed for downstream C consumers. This example uses
 `R_GetCCallable()` through the header wrappers, then reads borrowed alignment
-columns directly. The `rtinycc` knitr engine displays the C code and stores the
-chunk body in `rminibwa_capi_code` for the next R chunk.
+columns directly. The same source is displayed here and compiled in the next
+chunk.
 
-```{rtinycc, object = "rminibwa_capi_code", rcode = FALSE}
-#define _Complex
-#include <limits.h>
-#include <stdint.h>
-#include <stddef.h>
-#include <R.h>
-#include <Rinternals.h>
-#include <Rminibwa.h>
-
-static int clamp_size_to_int(size_t x)
-{
-    return x > (size_t) INT_MAX ? INT_MAX : (int) x;
+```{r downstream-c-code, echo = FALSE, results = "asis"}
+capi_path <- file.path("inst", "capi", "rminibwa_tinycc_consumer.c")
+if (!file.exists(capi_path)) {
+  capi_path <- system.file(
+    "capi", "rminibwa_tinycc_consumer.c",
+    package = "Rminibwa", mustWork = TRUE
+  )
 }
-
-SEXP rminibwa_capi_summary(SEXP align_x)
-{
-    const RmbAlignBatch *batch = Rminibwa_align_from_sexp(align_x);
-    const size_t n = Rminibwa_align_n(batch);
-    const int32_t *tid = Rminibwa_align_i32_col(batch, "tid");
-    const int32_t *qe = Rminibwa_align_i32_col(batch, "qe");
-    const int64_t *ts = Rminibwa_align_i64_col(batch, "ts");
-    size_t n_cigar_words = 0;
-    (void) Rminibwa_align_cigar_words(batch, &n_cigar_words);
-
-    SEXP out = PROTECT(Rf_allocVector(INTSXP, 4));
-    INTEGER(out)[0] = clamp_size_to_int(n);
-    INTEGER(out)[1] = n && tid ? tid[0] : NA_INTEGER;
-    INTEGER(out)[2] = n && qe ? qe[0] : NA_INTEGER;
-    INTEGER(out)[3] = clamp_size_to_int(n_cigar_words);
-
-    SEXP names = PROTECT(Rf_allocVector(STRSXP, 4));
-    SET_STRING_ELT(names, 0, Rf_mkChar("n"));
-    SET_STRING_ELT(names, 1, Rf_mkChar("first_tid"));
-    SET_STRING_ELT(names, 2, Rf_mkChar("first_qe"));
-    SET_STRING_ELT(names, 3, Rf_mkChar("cigar_words"));
-    Rf_setAttrib(out, R_NamesSymbol, names);
-
-    /* Touch one 64-bit column so this example covers both integer-width paths. */
-    if (n && ts && ts[0] < 0) INTEGER(out)[2] = NA_INTEGER;
-
-    UNPROTECT(2);
-    return out;
-}
+rminibwa_capi_code <- paste(readLines(capi_path, warn = FALSE), collapse = "\n")
+Rtinycc:::rtinycc_c_block(rminibwa_capi_code)
 ```
 
 ```{r downstream-c-api}
@@ -216,10 +182,12 @@ rust_lib <- Sys.getenv("RMINIBWA_BENCH_RUST_LIB")
 dyn.load(rust_lib)
 invisible(.C("rminibwa_bench_rust_init_c", bench_prefix))
 
-simd_set_backend("avx2")
+compare_backend <- if ("avx2" %in% internal_backends) "avx2" else tail(internal_backends, 1L)
+compare_backend
+simd_set_backend(compare_backend)
 external_compare <- bench::mark(
-  rminibwa_avx2_count = Rminibwa:::mb_map_count(bench_query_raw, bench_idx, bench_opt, bench_name_raw),
-  rminibwa_avx2_batch = mb_align_n(mb_map(bench_query_raw, bench_idx, bench_opt, bench_name_raw)),
+  rminibwa_count = Rminibwa:::mb_map_count(bench_query_raw, bench_idx, bench_opt, bench_name_raw),
+  rminibwa_batch = mb_align_n(mb_map(bench_query_raw, bench_idx, bench_opt, bench_name_raw)),
   python_pyo3 = length(py_minibwa$map(py_idx, py_opt, "read1", bench_query, "none")),
   rust_cdylib = .C("rminibwa_bench_rust_map_count_c", bench_query, out = integer(1L))$out,
   iterations = 100,

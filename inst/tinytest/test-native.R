@@ -14,9 +14,12 @@ local({
   expect_equal(rawToChar(contigs$name[[1]]), "chr1")
   expect_equal(contigs$length[[1]], 4000)
 
-  expect_equal(simd_info()$compiled_backends, c("scalar", "sse4", "avx2"))
+  info <- simd_info()
+  expect_true("scalar" %in% info$compiled_backends)
+  expect_true(all(info$compiled_backends %in% c("scalar", "sse4", "avx2")))
+  expect_true(all(info$available_backends %in% info$compiled_backends))
   query <- charToRaw(substr(ref, 1L, 100L))
-  for (backend in intersect(c("scalar", "sse4", "avx2"), simd_info()$available_backends)) {
+  for (backend in intersect(c("scalar", "sse4", "avx2"), info$available_backends)) {
     simd_set_backend(backend)
     aln <- query |>
       mb_map(idx, opt = mb_opts("sr", out_n = 0L), name = charToRaw("r1"))

@@ -81,13 +81,12 @@ c(
 
 ## Downstream C API with Rtinycc
 
-`Rminibwa.h` is installed for downstream C consumers. This inline C
-chunk uses `R_GetCCallable()` through the header wrappers, then reads
-borrowed alignment columns directly. The `rtinycc` knitr engine displays
-the C code and stores the chunk body in `rminibwa_capi_code` for the
-next R chunk.
+`Rminibwa.h` is installed for downstream C consumers. This example uses
+`R_GetCCallable()` through the header wrappers, then reads borrowed
+alignment columns directly. The same source is displayed here and
+compiled in the next chunk.
 
-``` rtinycc
+``` c
 #define _Complex
 #include <limits.h>
 #include <stdint.h>
@@ -183,6 +182,10 @@ ksw_counts <- do.call(rbind, lapply(internal_backends, function(backend) {
   data.frame(backend = backend, as.list(Rminibwa:::simd_counters(FALSE)), check.names = FALSE)
 }))
 ksw_counts
+#>   backend extz2 extd2 ll_qinit ll_u8_core ll_i16_core ll_i16
+#> 1  scalar     0   438        0          0           0      0
+#> 2    sse4     0   438        0          0           0      0
+#> 3    avx2     0   438        0          0           0      0
 
 rminibwa_internal <- do.call(rbind, lapply(internal_backends, function(backend) {
   simd_set_backend(backend)
@@ -196,6 +199,12 @@ rminibwa_internal <- do.call(rbind, lapply(internal_backends, function(backend) 
   out
 }))
 rminibwa_internal[, c("backend", "min", "median", "itr/sec", "mem_alloc")]
+#> # A tibble: 3 × 5
+#>   backend   min median `itr/sec` mem_alloc
+#>   <chr>   <dbl>  <dbl>     <dbl> <bch:byt>
+#> 1 scalar   976.  1008.      986.        0B
+#> 2 sse4     913.   937.     1055.        0B
+#> 3 avx2     930.   952.     1038.        0B
 
 py_path <- Sys.getenv("RMINIBWA_BENCH_PYTHONPATH")
 py_run_string(sprintf("import sys; sys.path.insert(0, %s)", shQuote(py_path)))
@@ -208,10 +217,13 @@ rust_lib <- Sys.getenv("RMINIBWA_BENCH_RUST_LIB")
 dyn.load(rust_lib)
 invisible(.C("rminibwa_bench_rust_init_c", bench_prefix))
 
-simd_set_backend("avx2")
+compare_backend <- if ("avx2" %in% internal_backends) "avx2" else tail(internal_backends, 1L)
+compare_backend
+#> [1] "avx2"
+simd_set_backend(compare_backend)
 external_compare <- bench::mark(
-  rminibwa_avx2_count = Rminibwa:::mb_map_count(bench_query_raw, bench_idx, bench_opt, bench_name_raw),
-  rminibwa_avx2_batch = mb_align_n(mb_map(bench_query_raw, bench_idx, bench_opt, bench_name_raw)),
+  rminibwa_count = Rminibwa:::mb_map_count(bench_query_raw, bench_idx, bench_opt, bench_name_raw),
+  rminibwa_batch = mb_align_n(mb_map(bench_query_raw, bench_idx, bench_opt, bench_name_raw)),
   python_pyo3 = length(py_minibwa$map(py_idx, py_opt, "read1", bench_query, "none")),
   rust_cdylib = .C("rminibwa_bench_rust_map_count_c", bench_query, out = integer(1L))$out,
   iterations = 100,
@@ -219,6 +231,13 @@ external_compare <- bench::mark(
   time_unit = "us"
 )
 external_compare[, c("expression", "min", "median", "itr/sec", "mem_alloc")]
+#> # A tibble: 4 × 5
+#>   expression       min median `itr/sec` mem_alloc
+#>   <bch:expr>     <dbl>  <dbl>     <dbl> <bch:byt>
+#> 1 rminibwa_count  927.   955.     1039.        0B
+#> 2 rminibwa_batch  923.   946.     1046.        0B
+#> 3 python_pyo3    1071.  1113.      888.    4.68KB
+#> 4 rust_cdylib     924.   950.     1046.   10.37KB
 
 invisible(.C("rminibwa_bench_rust_clear_c"))
 dyn.unload(rust_lib)
