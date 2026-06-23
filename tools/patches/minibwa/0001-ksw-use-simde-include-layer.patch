@@ -1,5 +1,5 @@
 diff --git a/ksw2_extd2_sse.c b/ksw2_extd2_sse.c
-index eafeb4e..3fb18ca 100644
+index eafeb4e..1069384 100644
 --- a/ksw2_extd2_sse.c
 +++ b/ksw2_extd2_sse.c
 @@ -2,7 +2,11 @@
@@ -15,6 +15,20 @@ index eafeb4e..3fb18ca 100644
  #define __SSE4_1__
  #include "s2n-lite.h"
  #elif defined(__SSE4_1__)
+@@ -15,10 +19,10 @@
+ 
+ static inline __m128i ksw_i8x4_to_i32x4(const int8_t *x)
+ {
+-#if defined(__ARM_NEON)
+-    return vreinterpretq_u8_s32(vmovl_s16(vget_low_s16(vmovl_s8(vcreate_s8((uint64_t)(uint32_t)*(int32_t*)x)))));
+-#elif defined(__SSE4_1__)
++#if defined(RMINIBWA_USE_SIMDE) || defined(__SSE4_1__)
+ 	return _mm_cvtepi8_epi32(_mm_cvtsi32_si128(*(int32_t*)x));
++#elif defined(__ARM_NEON)
++    return vreinterpretq_u8_s32(vmovl_s16(vget_low_s16(vmovl_s8(vcreate_s8((uint64_t)(uint32_t)*(int32_t*)x)))));
+ #else
+ 	return _mm_setr_epi32(x[0], x[1], x[2], x[3]);
+ #endif
 diff --git a/ksw2_extz2_sse.c b/ksw2_extz2_sse.c
 index af4981c..89837e7 100644
 --- a/ksw2_extz2_sse.c

@@ -19,10 +19,10 @@
 
 static inline __m128i ksw_i8x4_to_i32x4(const int8_t *x)
 {
-#if defined(__ARM_NEON)
-    return vreinterpretq_u8_s32(vmovl_s16(vget_low_s16(vmovl_s8(vcreate_s8((uint64_t)(uint32_t)*(int32_t*)x)))));
-#elif defined(__SSE4_1__)
+#if defined(RMINIBWA_USE_SIMDE) || defined(__SSE4_1__)
 	return _mm_cvtepi8_epi32(_mm_cvtsi32_si128(*(int32_t*)x));
+#elif defined(__ARM_NEON)
+    return vreinterpretq_u8_s32(vmovl_s16(vget_low_s16(vmovl_s8(vcreate_s8((uint64_t)(uint32_t)*(int32_t*)x)))));
 #else
 	return _mm_setr_epi32(x[0], x[1], x[2], x[3]);
 #endif

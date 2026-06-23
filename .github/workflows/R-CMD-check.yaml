@@ -32,6 +32,7 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      R_PROFILE_USER: ${{ github.workspace }}/.github/Rprofile
 
     steps:
       - uses: actions/checkout@v4
@@ -43,11 +44,6 @@ jobs:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
-
-      - name: Configure R repositories
-        shell: bash
-        run: |
-          echo 'options(repos = c(sounkou = "https://sounkou-bioinfo.r-universe.dev", CRAN = "https://cloud.r-project.org"))' >> ~/.Rprofile
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
