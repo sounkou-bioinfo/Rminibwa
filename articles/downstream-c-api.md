@@ -92,15 +92,23 @@ SEXP rminibwa_capi_summary(SEXP align_x)
 
 ``` r
 
-ffi <- Rtinycc::tcc_ffi() |>
-  Rtinycc::tcc_include(system.file("include", package = "Rminibwa")) |>
-  Rtinycc::tcc_source(rminibwa_capi_code) |>
-  Rtinycc::tcc_bind(
-    rminibwa_capi_summary = list(args = list("sexp"), returns = "sexp")
-  ) |>
-  Rtinycc::tcc_compile()
+ffi <- tryCatch(
+  Rtinycc::tcc_ffi() |>
+    Rtinycc::tcc_include(system.file("include", package = "Rminibwa")) |>
+    Rtinycc::tcc_source(rminibwa_capi_code) |>
+    Rtinycc::tcc_bind(
+      rminibwa_capi_summary = list(args = list("sexp"), returns = "sexp")
+    ) |>
+    Rtinycc::tcc_compile(),
+  error = identity
+)
 
-ffi$rminibwa_capi_summary(aln)
+if (inherits(ffi, "error")) {
+  cat("Rtinycc compilation is unavailable on this platform during vignette build:\n")
+  cat(conditionMessage(ffi), "\n")
+} else {
+  ffi$rminibwa_capi_summary(aln)
+}
 #>           n   first_tid    first_qe cigar_words 
 #>          51           0         100          51
 ```
