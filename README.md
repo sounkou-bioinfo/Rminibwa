@@ -116,14 +116,15 @@ runtime. On x86_64 this can include SSE4 and AVX2. On other
 architectures the portable backend is used.
 
 ``` r
-info <- simd_info()
-data.frame(
-  selected = info$selected_backend,
-  compiled = paste(info$compiled_backends, collapse = ", "),
-  available = paste(info$available_backends, collapse = ", ")
-)
-#>   selected           compiled          available
-#> 1     avx2 scalar, sse4, avx2 scalar, sse4, avx2
+simd_info()
+#> <rminibwa SIMD dispatch>
+#>   selected:  avx2
+#>   requested: auto
+#>   mode:      rminibwa-ksw-staged
+#>   compiled:  scalar, sse4, avx2
+#>   available: scalar, sse4, avx2
+#>   cpu:       <none>
+#>   target:    x86_64
 ```
 
 AVX-512 is not built by default. It is useful for experiments, but it
@@ -135,31 +136,6 @@ the actual instruction families in local builds.
 `make rdm MINIBWA_BINDINGS_ROOT=/path/to/minibwa-bindings` renders the
 optional benchmark tables below. The workload uses a chrM-sized random
 reference and an indel-mutated read so KSW is exercised.
-
-KSW calls on the benchmark read:
-
-| backend | extz2 | extd2 | ll_qinit | ll_u8_core | ll_i16_core | ll_i16 |
-|:--------|------:|------:|---------:|-----------:|------------:|-------:|
-| scalar  |     0 |   438 |        0 |          0 |           0 |      0 |
-| sse4    |     0 |   438 |        0 |          0 |           0 |      0 |
-| avx2    |     0 |   438 |        0 |          0 |           0 |      0 |
-
-Count-only mapper timing by staged backend:
-
-| backend | min       | median    | itr/sec | mem_alloc |
-|:--------|:----------|:----------|:--------|:----------|
-| scalar  | 1042.4 us | 1074.5 us | 928.1   | 0B        |
-| sse4    | 1000.4 us | 1013.2 us | 981.0   | 0B        |
-| avx2    | 1051.7 us | 1064.0 us | 932.3   | 0B        |
-
-External comparison using Rminibwa backend `avx2`:
-
-| expression     | min       | median    | itr/sec | mem_alloc |
-|:---------------|:----------|:----------|:--------|:----------|
-| rminibwa_count | 1035.4 us | 1067.7 us | 934.3   | 0B        |
-| rminibwa_batch | 1005.0 us | 1037.6 us | 958.1   | 0B        |
-| python_pyo3    | 1170.8 us | 1202.2 us | 822.2   | 4.68KB    |
-| rust_cdylib    | 1026.3 us | 1036.0 us | 960.8   | 10.37KB   |
 
 ## Development
 

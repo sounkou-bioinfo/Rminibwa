@@ -184,11 +184,29 @@ simd_backend <- function() {
 
 #' Report SIMD dispatch diagnostics
 #'
-#' @return A named list with dispatch mode, requested backend, selected backend,
-#'   compiled backends, CPU-supported backends, available backends, and target.
+#' @return An object of class `rminibwa_simd_info`: a named list with dispatch
+#'   mode, requested backend, selected backend, compiled backends,
+#'   CPU-supported backends, available backends, and target.
 #' @export
 simd_info <- function() {
-  .Call(RC_simd_info)
+  structure(.Call(RC_simd_info), class = "rminibwa_simd_info")
+}
+
+#' @export
+print.rminibwa_simd_info <- function(x, ...) {
+  collapse <- function(value) {
+    if (!length(value)) return("<none>")
+    paste(value, collapse = ", ")
+  }
+  cat("<rminibwa SIMD dispatch>\n")
+  cat("  selected:  ", x$selected_backend, "\n", sep = "")
+  cat("  requested: ", x$requested_backend, "\n", sep = "")
+  cat("  mode:      ", x$dispatch_mode, "\n", sep = "")
+  cat("  compiled:  ", collapse(x$compiled_backends), "\n", sep = "")
+  cat("  available: ", collapse(x$available_backends), "\n", sep = "")
+  cat("  cpu:       ", collapse(x$cpu_backends), "\n", sep = "")
+  cat("  target:    ", x$target, "\n", sep = "")
+  invisible(x)
 }
 
 # Internal diagnostic used by developer benchmarks.

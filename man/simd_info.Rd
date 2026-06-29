@@ -7,8 +7,9 @@
 simd_info()
 }
 \value{
-A named list with dispatch mode, requested backend, selected backend,
-compiled backends, CPU-supported backends, available backends, and target.
+An object of class \code{rminibwa_simd_info}: a named list with dispatch
+mode, requested backend, selected backend, compiled backends,
+CPU-supported backends, available backends, and target.
 }
 \description{
 Report SIMD dispatch diagnostics

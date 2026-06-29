@@ -15,6 +15,10 @@ local({
   expect_equal(contigs$length[[1]], 4000)
 
   info <- simd_info()
+  expect_true(inherits(info, "rminibwa_simd_info"))
+  info_print <- capture.output(print(info))
+  expect_true(any(grepl("<rminibwa SIMD dispatch>", info_print, fixed = TRUE)))
+  expect_true(any(grepl("selected:", info_print, fixed = TRUE)))
   expect_true("scalar" %in% info$compiled_backends)
   expect_true(all(info$compiled_backends %in% c("scalar", "sse4", "avx2")))
   expect_true(all(info$available_backends %in% info$compiled_backends))

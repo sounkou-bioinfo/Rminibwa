@@ -124,12 +124,7 @@ objects separately, then select an available backend at runtime. On x86_64 this
 can include SSE4 and AVX2. On other architectures the portable backend is used.
 
 ```{r simd-info}
-info <- simd_info()
-data.frame(
-  selected = info$selected_backend,
-  compiled = paste(info$compiled_backends, collapse = ", "),
-  available = paste(info$available_backends, collapse = ", ")
-)
+simd_info()
 ```
 
 AVX-512 is not built by default. It is useful for experiments, but it would add a
