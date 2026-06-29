@@ -1,5 +1,14 @@
 # Changelog
 
+## Rminibwa 0.3.0-0.0.1.9000
+
+- Fold in upstream `minibwa` v0.3 / `MB_VERSION` `0.3-r391` at commit
+  `a679d17cb822c6cca67ab78c439f9c9826f1b07d`.
+- Switch package versions to the `<minibwa-version>-<Rminibwa-version>`
+  scheme; development builds now use `0.3.0-0.0.1.9000`.
+- Add a MinGW/Rtools-only `kalloc.c` format-string guard for `size_t`
+  diagnostics while leaving the non-MinGW upstream code path unchanged.
+
 ## Rminibwa 0.0.0.9000
 
 - Bootstrap `Rminibwa` as a GPL (\>= 2) R package wrapping pinned

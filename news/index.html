@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">Rminibwa</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0-0.0.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,12 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.0-0.0.1.9000" id="rminibwa-030-0019000">Rminibwa 0.3.0-0.0.1.9000<a class="anchor" aria-label="anchor" href="#rminibwa-030-0019000"></a></h2>
+<ul><li>Fold in upstream <code>minibwa</code> v0.3 / <code>MB_VERSION</code> <code>0.3-r391</code> at commit <code>a679d17cb822c6cca67ab78c439f9c9826f1b07d</code>.</li>
+<li>Switch package versions to the <code>&lt;minibwa-version&gt;-&lt;Rminibwa-version&gt;</code> scheme; development builds now use <code>0.3.0-0.0.1.9000</code>.</li>
+<li>Add a MinGW/Rtools-only <code>kalloc.c</code> format-string guard for <code>size_t</code> diagnostics while leaving the non-MinGW upstream code path unchanged.</li>
+</ul></div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.0.9000" id="rminibwa-0009000">Rminibwa 0.0.0.9000<a class="anchor" aria-label="anchor" href="#rminibwa-0009000"></a></h2>
 <ul><li>Bootstrap <code>Rminibwa</code> as a GPL (&gt;= 2) R package wrapping pinned upstream <code>lh3/minibwa</code> C sources.</li>
 <li>Add native bindings for index build/load, raw-vector query mapping, native external-pointer alignment batches, ALTREP column views, and packed CIGAR accessors.</li>
@@ -53,7 +59,8 @@
 <li>Add <code>make asm</code> / <code>tools/check-assembly.R</code> to audit generated SIMD instruction families in staged objects and shared libraries.</li>
 <li>Add pkgdown configuration and GitHub Actions workflows for standard R CMD check, Fedora/R-devel CRAN-style check, and GitHub Pages deployment.</li>
 </ul></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">
