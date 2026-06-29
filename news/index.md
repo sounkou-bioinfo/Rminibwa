@@ -2,6 +2,10 @@
 
 ## Rminibwa 0.3.0-0.0.1.9000
 
+- Return
+  [`simd_info()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/simd_info.md)
+  as a classed `rminibwa_simd_info` object with a concise print method
+  for dispatch diagnostics.
 - Fold in upstream `minibwa` v0.3 / `MB_VERSION` `0.3-r391` at commit
   `a679d17cb822c6cca67ab78c439f9c9826f1b07d`.
 - Switch package versions to the `<minibwa-version>-<Rminibwa-version>`

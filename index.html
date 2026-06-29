@@ -136,143 +136,21 @@
 </h2>
 <p>The package follows the RsimdDispatch style: compile portable and ISA-specific objects separately, then select an available backend at runtime. On x86_64 this can include SSE4 and AVX2. On other architectures the portable backend is used.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">info</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simd_info.html">simd_info</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  selected <span class="op">=</span> <span class="va">info</span><span class="op">$</span><span class="va">selected_backend</span>,</span>
-<span>  compiled <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">info</span><span class="op">$</span><span class="va">compiled_backends</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span>,</span>
-<span>  available <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">info</span><span class="op">$</span><span class="va">available_backends</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt;   selected           compiled          available</span></span>
-<span><span class="co">#&gt; 1     avx2 scalar, sse4, avx2 scalar, sse4, avx2</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/simd_info.html">simd_info</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; &lt;rminibwa SIMD dispatch&gt;</span></span>
+<span><span class="co">#&gt;   selected:  avx2</span></span>
+<span><span class="co">#&gt;   requested: auto</span></span>
+<span><span class="co">#&gt;   mode:      rminibwa-ksw-staged</span></span>
+<span><span class="co">#&gt;   compiled:  scalar, sse4, avx2</span></span>
+<span><span class="co">#&gt;   available: scalar, sse4, avx2</span></span>
+<span><span class="co">#&gt;   cpu:       &lt;none&gt;</span></span>
+<span><span class="co">#&gt;   target:    x86_64</span></span></code></pre></div>
 <p>AVX-512 is not built by default. It is useful for experiments, but it would add a larger dispatch and CI surface. Use <code>make asm</code> to inspect the actual instruction families in local builds.</p>
 </div>
 <div class="section level2">
 <h2 id="benchmarks">Benchmarks<a class="anchor" aria-label="anchor" href="#benchmarks"></a>
 </h2>
 <p><code>make rdm MINIBWA_BINDINGS_ROOT=/path/to/minibwa-bindings</code> renders the optional benchmark tables below. The workload uses a chrM-sized random reference and an indel-mutated read so KSW is exercised.</p>
-<p>KSW calls on the benchmark read:</p>
-<table class="table">
-<colgroup>
-<col width="13%">
-<col width="10%">
-<col width="10%">
-<col width="15%">
-<col width="18%">
-<col width="19%">
-<col width="12%">
-</colgroup>
-<thead><tr>
-<th align="left">backend</th>
-<th align="right">extz2</th>
-<th align="right">extd2</th>
-<th align="right">ll_qinit</th>
-<th align="right">ll_u8_core</th>
-<th align="right">ll_i16_core</th>
-<th align="right">ll_i16</th>
-</tr></thead>
-<tbody>
-<tr>
-<td align="left">scalar</td>
-<td align="right">0</td>
-<td align="right">438</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr>
-<td align="left">sse4</td>
-<td align="right">0</td>
-<td align="right">438</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr>
-<td align="left">avx2</td>
-<td align="right">0</td>
-<td align="right">438</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-</tbody>
-</table>
-<p>Count-only mapper timing by staged backend:</p>
-<table class="table">
-<thead><tr>
-<th align="left">backend</th>
-<th align="left">min</th>
-<th align="left">median</th>
-<th align="left">itr/sec</th>
-<th align="left">mem_alloc</th>
-</tr></thead>
-<tbody>
-<tr>
-<td align="left">scalar</td>
-<td align="left">1042.4 us</td>
-<td align="left">1074.5 us</td>
-<td align="left">928.1</td>
-<td align="left">0B</td>
-</tr>
-<tr>
-<td align="left">sse4</td>
-<td align="left">1000.4 us</td>
-<td align="left">1013.2 us</td>
-<td align="left">981.0</td>
-<td align="left">0B</td>
-</tr>
-<tr>
-<td align="left">avx2</td>
-<td align="left">1051.7 us</td>
-<td align="left">1064.0 us</td>
-<td align="left">932.3</td>
-<td align="left">0B</td>
-</tr>
-</tbody>
-</table>
-<p>External comparison using Rminibwa backend <code>avx2</code>:</p>
-<table class="table">
-<thead><tr>
-<th align="left">expression</th>
-<th align="left">min</th>
-<th align="left">median</th>
-<th align="left">itr/sec</th>
-<th align="left">mem_alloc</th>
-</tr></thead>
-<tbody>
-<tr>
-<td align="left">rminibwa_count</td>
-<td align="left">1035.4 us</td>
-<td align="left">1067.7 us</td>
-<td align="left">934.3</td>
-<td align="left">0B</td>
-</tr>
-<tr>
-<td align="left">rminibwa_batch</td>
-<td align="left">1005.0 us</td>
-<td align="left">1037.6 us</td>
-<td align="left">958.1</td>
-<td align="left">0B</td>
-</tr>
-<tr>
-<td align="left">python_pyo3</td>
-<td align="left">1170.8 us</td>
-<td align="left">1202.2 us</td>
-<td align="left">822.2</td>
-<td align="left">4.68KB</td>
-</tr>
-<tr>
-<td align="left">rust_cdylib</td>
-<td align="left">1026.3 us</td>
-<td align="left">1036.0 us</td>
-<td align="left">960.8</td>
-<td align="left">10.37KB</td>
-</tr>
-</tbody>
-</table>
 </div>
 <div class="section level2">
 <h2 id="development">Development<a class="anchor" aria-label="anchor" href="#development"></a>

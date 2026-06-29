@@ -51,26 +51,14 @@ for the remaining KSW entry points.
 
 library(Rminibwa)
 simd_info()
-#> $dispatch_mode
-#> [1] "rminibwa-ksw-staged"
-#> 
-#> $requested_backend
-#> [1] "auto"
-#> 
-#> $selected_backend
-#> [1] "avx2"
-#> 
-#> $compiled_backends
-#> [1] "scalar" "sse4"   "avx2"  
-#> 
-#> $cpu_supported_backends
-#> [1] "scalar" "sse4"   "avx2"  
-#> 
-#> $available_backends
-#> [1] "scalar" "sse4"   "avx2"  
-#> 
-#> $target
-#> [1] "x86_64"
+#> <rminibwa SIMD dispatch>
+#>   selected:  avx2
+#>   requested: auto
+#>   mode:      rminibwa-ksw-staged
+#>   compiled:  scalar, sse4, avx2
+#>   available: scalar, sse4, avx2
+#>   cpu:       <none>
+#>   target:    x86_64
 ```
 
 Select a backend explicitly for diagnostics or benchmarks:
