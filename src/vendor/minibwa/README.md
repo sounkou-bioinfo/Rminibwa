@@ -91,6 +91,12 @@ Note in the default adaptive mode, `-g`/`-w`/`-W`/`-N`/`-m`/`-s` only changes
 the short-read setting; the long-read setting is fixed. This mode is disabled
 with `--adap=no` or when `-x sr` or `-x lr` is specified.
 
+#### Mapping with legacy bwa-mem CLI
+
+Minibwa also provides legacy bwa-mem command-line interface (CLI) via the `mem` subcommand.
+However, due to algorithm and parameter differences, many bwa-mem options are ignored.
+The output minibwa alignment is also not identical to bwa-mem.
+
 ## Developers' Guide
 
 Minibwa provides basic APIs for loading index and aligning reads.
@@ -103,6 +109,7 @@ in batch, which is faster and also supports paired-end mapping.
 
 * Minibwa does not work with noisy long reads or spliced RNA-seq reads.
 * Minibwa does not support undirectional bisulfite sequencing data.
+* Minibwa does not recognize alternate haplotypes.
 
 [zlib]: https://zlib.net/
 [mimalloc]: https://github.com/microsoft/mimalloc

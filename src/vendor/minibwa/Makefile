@@ -84,10 +84,10 @@ l2bit.o: kommon.h l2bit.h kseq.h
 lchain.o: mbpriv.h minibwa.h l2bit.h bwt.h kommon.h bseq.h kalloc.h ksort.h
 libsais.o: libsais.h
 libsais64.o: libsais.h libsais64.h
-main.o: kommon.h mbpriv.h minibwa.h l2bit.h bwt.h bseq.h ketopt.h kseq.h
+main.o: kommon.h mbpriv.h minibwa.h l2bit.h bwt.h bseq.h ketopt.h
 map-algo.o: mbpriv.h minibwa.h l2bit.h bwt.h kommon.h bseq.h kalloc.h ksort.h
 map-main.o: kommon.h mbpriv.h minibwa.h l2bit.h bwt.h bseq.h kalloc.h
-map-main.o: kthread.h ketopt.h
+map-main.o: kthread.h ketopt.h kseq.h
 options.o: minibwa.h
 pe.o: mbpriv.h minibwa.h l2bit.h bwt.h kommon.h bseq.h kalloc.h ksw2.h
 seed.o: mbpriv.h minibwa.h l2bit.h bwt.h kommon.h bseq.h kalloc.h ksort.h

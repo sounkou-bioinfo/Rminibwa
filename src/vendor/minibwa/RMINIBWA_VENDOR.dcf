@@ -1,14 +1,14 @@
 Component: minibwa
-Version: 0.2-r379-dirty
+Version: 0.3-r391
 Repository: https://github.com/lh3/minibwa
 GitRepository: https://github.com/lh3/minibwa.git
-Commit: f0fd108456d459e5da3755f29c8700dc7f6fe0df
-Date: 2026-06-22
-ArchiveURL: https://github.com/lh3/minibwa/archive/f0fd108456d459e5da3755f29c8700dc7f6fe0df.tar.gz
-ArchiveSHA256: fd290fd10f50e421b7c72e3350d191ea4a354c3aa73f8a990344e451dad9c36b
+Commit: a679d17cb822c6cca67ab78c439f9c9826f1b07d
+Date: 2026-06-28
+ArchiveURL: https://github.com/lh3/minibwa/archive/a679d17cb822c6cca67ab78c439f9c9826f1b07d.tar.gz
+ArchiveSHA256: 56783d33816971047104f478110c3d69a23356e20854be6b5fc0a7c1082de68c
 VendoredSource: src/vendor/minibwa
 PatchDirectory: tools/patches/minibwa
-Patches: 0001-ksw-use-simde-include-layer.patch, 0002-fix-checked-reads-and-subbatch-memset.patch, 0003-add-avx2-wide-extd2-kernel.patch
+Patches: 0001-ksw-use-simde-include-layer.patch, 0002-fix-checked-reads-and-subbatch-memset.patch, 0003-add-avx2-wide-extd2-kernel.patch, 0004-fix-mingw-kalloc-size-t-format.patch
 VendoredScope: top-level minibwa C sources and headers; repository metadata, test data, manuscript assets, examples, and mimalloc omitted
-VendoredAtUTC: 2026-06-22T22:38:05Z
+VendoredAtUTC: 2026-06-29T19:09:01Z
 License: Rminibwa is GPL (>= 2). Upstream minibwa is MIT with bundled third-party notices in LICENSE.txt.

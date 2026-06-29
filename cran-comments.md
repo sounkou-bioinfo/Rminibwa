@@ -12,7 +12,7 @@
 
 Expected development notes:
 
-1. New submission / development version `0.0.0.9000`.
+1. New submission / development version `0.3.0-0.0.1.9000`.
 2. GitHub URLs may be reported unavailable until the public repository and
    GitHub Pages site are live.
 3. The non-portable `-mno-omit-leaf-frame-pointer` flag is injected by the

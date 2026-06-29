@@ -38,17 +38,16 @@
 +	if (!bwt_fread_exact(L2 + 1, sizeof(uint64_t), 4, fp)) goto load_raw_failure;
  	L2[0] = 0;
 -	read_huge(fp, raw_size<<2, raw);
+-	fclose(fp);
 +	if (read_huge(fp, raw_bytes, raw) != raw_bytes) goto load_raw_failure;
-+	bwt = mb_bwt_init_from_raw(0, raw, L2[4], primary);
+ 	bwt = mb_bwt_init_from_raw(0, raw, L2[4], primary);
 +load_raw_failure:
-+	free(raw);
- 	fclose(fp);
--	bwt = mb_bwt_init_from_raw(0, raw, L2[4], primary);
--	free(raw);
+ 	free(raw);
++	fclose(fp);
  	return bwt;
  }
  
-@@ -646,25 +657,32 @@
+@@ -646,30 +657,34 @@
  
  	fp = fopen(fn, "rb");
  	if (fp == 0) return 0;
@@ -76,21 +75,26 @@
 +	if (read_huge(fp, bwt->data_len << 3, bwt->data) != (bwt->data_len << 3)) goto load_failure;
 +	if (!bwt_fread_exact(&bwt->n_sa, 8, 1, fp)) goto load_failure;
  	if (bwt->sa_bit != (uint32_t)-1 && bwt->n_sa > 0) {
+ 		uint64_t expected_n_sa = (bwt->seq_len + (1ULL << bwt->sa_bit)) >> bwt->sa_bit;
+-		if (bwt->n_sa != expected_n_sa) {
+-			mb_bwt_destroy(bwt);
+-			return NULL;
+-		}
++		if (bwt->n_sa != expected_n_sa) goto load_failure;
  		bwt->sa = kom_malloc(uint64_t, bwt->n_sa);
 -		fread(bwt->sa, 8, bwt->n_sa, fp);
 +		if (!bwt_fread_exact(bwt->sa, 8, bwt->n_sa, fp)) goto load_failure;
  	}
  	fclose(fp);
  	return bwt;
--}
 +load_failure:
 +	fclose(fp);
 +	mb_bwt_destroy(bwt);
 +	return 0;
-+}
+ }
 --- a/l2bit.c
 +++ b/l2bit.c
-@@ -1,10 +1,16 @@
+@@ -1,11 +1,17 @@
  #include <zlib.h>
  #include <stdio.h>
  #include <assert.h>
@@ -98,15 +102,16 @@
  #include "kommon.h"
  #include "l2bit.h"
  #include "kseq.h"
- KSEQ_INIT(gzFile, gzread);
-+
+ KSEQ_INIT(gzFile, gzread)
+ 
 +static int l2b_fread_exact(void *ptr, size_t size, size_t nmemb, FILE *fp)
 +{
 +	return nmemb == 0 || fread(ptr, size, nmemb, fp) == nmemb;
 +}
- 
++
  static int64_t l2b_pos2cid(const l2b_t *l2b, int64_t s, int64_t len, int64_t *cst)
  {
+ 	int64_t lo = 0, hi = l2b->n_ctg, mid;
 @@ -275,23 +281,26 @@
  	l2b_t *l2b;
  	fp = fn == 0 || strcmp(fn, "-") == 0? stdin : fopen(fn, "rb");

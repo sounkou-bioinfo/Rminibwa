@@ -5,7 +5,7 @@
 #include "kommon.h"
 #include "l2bit.h"
 #include "kseq.h"
-KSEQ_INIT(gzFile, gzread);
+KSEQ_INIT(gzFile, gzread)
 
 static int l2b_fread_exact(void *ptr, size_t size, size_t nmemb, FILE *fp)
 {

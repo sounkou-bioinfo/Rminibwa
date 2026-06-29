@@ -26,3 +26,6 @@ small and source-compatible with that exact commit. When bumping upstream:
   `ksw_extd2` kernel used by the staged `avx2` backend. This patch is derived
   from the local `fg-labs/minibwa-bindings` reconnaissance copy and is kept in
   the patch queue rather than treated as upstream minibwa source.
+- `0004-fix-mingw-kalloc-size-t-format.patch`: use a MinGW/Rtools-only
+  `size_t` format string in `km_stat_print()`; other platforms keep the
+  upstream code path unchanged.

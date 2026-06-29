@@ -676,6 +676,8 @@ mb_bwt_t *mb_bwt_load(const char *fn)
 	if (read_huge(fp, bwt->data_len << 3, bwt->data) != (bwt->data_len << 3)) goto load_failure;
 	if (!bwt_fread_exact(&bwt->n_sa, 8, 1, fp)) goto load_failure;
 	if (bwt->sa_bit != (uint32_t)-1 && bwt->n_sa > 0) {
+		uint64_t expected_n_sa = (bwt->seq_len + (1ULL << bwt->sa_bit)) >> bwt->sa_bit;
+		if (bwt->n_sa != expected_n_sa) goto load_failure;
 		bwt->sa = kom_malloc(uint64_t, bwt->n_sa);
 		if (!bwt_fread_exact(bwt->sa, 8, bwt->n_sa, fp)) goto load_failure;
 	}
