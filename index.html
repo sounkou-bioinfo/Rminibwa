@@ -61,7 +61,7 @@
 <!-- badges: start -->
 
 <p>Rminibwa is an R interface to <a href="https://github.com/lh3/minibwa" class="external-link">minibwa</a>, Heng Li’s genomic read aligner. It vendors a pinned upstream source tree, builds a package-provided <code>minibwa</code> executable, and exposes a native C-backed API for in-process alignment work.</p>
-<p>The CLI wrappers are kept close to upstream behavior. The native interface uses raw query bytes, external-pointer alignment batches, ALTREP column views, and a small C header for downstream packages. SIMD-sensitive KSW code is compiled as separate staged backends and selected at runtime.</p>
+<p>The CLI wrappers are kept close to upstream behavior. The native interface uses raw query bytes, external-pointer alignment batches, ALTREP alignment/read column views, and a small C header for downstream packages. SIMD-sensitive KSW code is compiled as separate staged backends and selected at runtime.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -91,7 +91,7 @@
 <div class="section level2">
 <h2 id="native-batches">Native batches<a class="anchor" aria-label="anchor" href="#native-batches"></a>
 </h2>
-<p>The native path avoids data frames in the hot alignment shape. <code><a href="reference/mb_map.html">mb_map()</a></code> returns an external-pointer batch; columns are exposed lazily to R and can also be read from C.</p>
+<p>The native path avoids data frames in the hot alignment shape. <code><a href="reference/mb_map_batch.html">mb_map_batch()</a></code> and <code><a href="reference/mb_fastx_iter.html">mb_map_fastx_batch()</a></code> return external-pointer batches; columns are exposed lazily to R and can also be read from C.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/sounkou-bioinfo/Rminibwa" class="external-link">Rminibwa</a></span><span class="op">)</span></span>
 <span></span>
@@ -104,17 +104,24 @@
 <span></span>
 <span><span class="fu"><a href="reference/mb_index_build.html">mb_index_build</a></span><span class="op">(</span><span class="va">fa</span>, <span class="va">prefix</span>, threads <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
 <span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/mb_index_load.html">mb_index_load</a></span><span class="op">(</span><span class="va">prefix</span><span class="op">)</span></span>
-<span><span class="va">aln</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rawConversion.html" class="external-link">charToRaw</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/substr.html" class="external-link">substr</a></span><span class="op">(</span><span class="va">ref</span>, <span class="fl">1L</span>, <span class="fl">100L</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="reference/mb_map.html">mb_map</a></span><span class="op">(</span><span class="va">idx</span>, opt <span class="op">=</span> <span class="fu"><a href="reference/mb_opts.html">mb_opts</a></span><span class="op">(</span><span class="st">"sr"</span>, out_n <span class="op">=</span> <span class="fl">0L</span><span class="op">)</span>, name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rawConversion.html" class="external-link">charToRaw</a></span><span class="op">(</span><span class="st">"read1"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>  n <span class="op">=</span> <span class="fu"><a href="reference/mb_align_n.html">mb_align_n</a></span><span class="op">(</span><span class="va">aln</span><span class="op">)</span>,</span>
-<span>  first_tid <span class="op">=</span> <span class="fu"><a href="reference/mb_align_n.html">mb_align_col</a></span><span class="op">(</span><span class="va">aln</span>, <span class="st">"tid"</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>,</span>
-<span>  first_qe <span class="op">=</span> <span class="fu"><a href="reference/mb_align_n.html">mb_align_col</a></span><span class="op">(</span><span class="va">aln</span>, <span class="st">"qe"</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>,</span>
-<span>  cigar_bytes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="reference/mb_align_n.html">mb_align_cigar_words</a></span><span class="op">(</span><span class="va">aln</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">starts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fl">1600L</span>, by <span class="op">=</span> <span class="fl">25L</span><span class="op">)</span></span>
+<span><span class="va">reads</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">starts</span>, <span class="kw">function</span><span class="op">(</span><span class="va">i</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/substr.html" class="external-link">substr</a></span><span class="op">(</span><span class="va">ref</span>, <span class="va">i</span>, <span class="va">i</span> <span class="op">+</span> <span class="fl">99L</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">aln</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/mb_map_batch.html">mb_map_batch</a></span><span class="op">(</span></span>
+<span>  <span class="va">reads</span>,</span>
+<span>  <span class="va">idx</span>,</span>
+<span>  opt <span class="op">=</span> <span class="fu"><a href="reference/mb_opts.html">mb_opts</a></span><span class="op">(</span><span class="st">"sr"</span>, out_n <span class="op">=</span> <span class="fl">0L</span><span class="op">)</span>,</span>
+<span>  name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"read"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">reads</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt;           n   first_tid    first_qe cigar_bytes </span></span>
-<span><span class="co">#&gt;          51           0         100         204</span></span></code></pre></div>
+<span></span>
+<span><span class="va">aln</span></span>
+<span><span class="co">#&gt; &lt;rminibwa alignment batch&gt;</span></span>
+<span><span class="co">#&gt;   records:     3264</span></span>
+<span><span class="co">#&gt;   reads:       64</span></span>
+<span><span class="co">#&gt;   hit read ids: 0..63</span></span>
+<span><span class="co">#&gt;   first tid:   0</span></span>
+<span><span class="co">#&gt;   first qend:  100</span></span>
+<span><span class="co">#&gt;   cigar bytes: 13056</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="c-consumers">C consumers<a class="anchor" aria-label="anchor" href="#c-consumers"></a>
@@ -126,9 +133,11 @@
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="op">{</span></span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>    <span class="dt">const</span> RmbAlignBatch <span class="op">*</span>batch <span class="op">=</span> Rminibwa_align_from_sexp<span class="op">(</span>x<span class="op">);</span></span>
 <span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>    <span class="dt">size_t</span> n <span class="op">=</span> Rminibwa_align_n<span class="op">(</span>batch<span class="op">);</span></span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>    <span class="dt">const</span> <span class="dt">int32_t</span> <span class="op">*</span>tid <span class="op">=</span> Rminibwa_align_i32_col<span class="op">(</span>batch<span class="op">,</span> <span class="st">"tid"</span><span class="op">);</span></span>
-<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>    <span class="cf">return</span> Rf_ScalarInteger<span class="op">(</span>n <span class="op">&amp;&amp;</span> tid <span class="op">?</span> tid<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:</span> NA_INTEGER<span class="op">);</span></span>
-<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>    <span class="dt">size_t</span> n_read <span class="op">=</span> Rminibwa_align_n_read<span class="op">(</span>batch<span class="op">);</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>    <span class="dt">const</span> <span class="dt">int32_t</span> <span class="op">*</span>hit_count <span class="op">=</span> Rminibwa_align_read_i32_col<span class="op">(</span>batch<span class="op">,</span> <span class="st">"hit_count"</span><span class="op">);</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>    <span class="dt">const</span> <span class="dt">int32_t</span> <span class="op">*</span>tid <span class="op">=</span> Rminibwa_align_i32_col<span class="op">(</span>batch<span class="op">,</span> <span class="st">"tid"</span><span class="op">);</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>    <span class="cf">return</span> Rf_ScalarInteger<span class="op">(</span>n <span class="op">&amp;&amp;</span> n_read <span class="op">&amp;&amp;</span> hit_count <span class="op">&amp;&amp;</span> tid <span class="op">?</span> tid<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:</span> NA_INTEGER<span class="op">);</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>A complete in-process consumer compiled with Rtinycc is in <code>vignettes/downstream-c-api.Rmd</code> and <code>inst/capi/rminibwa_tinycc_consumer.c</code>.</p>
 </div>
 <div class="section level2">

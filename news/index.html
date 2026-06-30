@@ -41,7 +41,13 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0-0.0.1.9000" id="rminibwa-030-0019000">Rminibwa 0.3.0-0.0.1.9000<a class="anchor" aria-label="anchor" href="#rminibwa-030-0019000"></a></h2>
-<ul><li>Return <code><a href="../reference/simd_info.html">simd_info()</a></code> as a classed <code>rminibwa_simd_info</code> object with a concise print method for dispatch diagnostics.</li>
+<ul><li>Add a MinGW/Rtools-only <code>kthread.c</code> dead-return guard after <code>pthread_exit()</code> to avoid <code>-Wreturn-type</code> install warnings on Windows.</li>
+<li>Make <code>kseq.h</code>’s <code>kroundup64()</code> width-safe on 32-bit targets such as wasm32, avoiding Emscripten <code>-Wshift-count-overflow</code> diagnostics.</li>
+<li>Add <code><a href="../reference/mb_map_batch.html">mb_map_batch()</a></code> for native columnar mapping of many query sequences in one call, plus <code><a href="../reference/mb_map_pair_batch.html">mb_map_pair_batch()</a></code> for explicit two-batch paired-end input.</li>
+<li>Add native FASTX iterators and <code><a href="../reference/mb_fastx_iter.html">mb_map_fastx_batch()</a></code> so file-backed batches can be mapped without materializing sequence strings in R.</li>
+<li>Add a read-level sidecar to alignment batches with read IDs, query lengths, fragment/mate fields, and per-read hit offsets/counts, exposed through ALTREP read columns and the C API.</li>
+<li>Add a concise print method for native alignment batches.</li>
+<li>Return <code><a href="../reference/simd_info.html">simd_info()</a></code> as a classed <code>rminibwa_simd_info</code> object with a concise print method for dispatch diagnostics.</li>
 <li>Fold in upstream <code>minibwa</code> v0.3 / <code>MB_VERSION</code> <code>0.3-r391</code> at commit <code>a679d17cb822c6cca67ab78c439f9c9826f1b07d</code>.</li>
 <li>Switch package versions to the <code>&lt;minibwa-version&gt;-&lt;Rminibwa-version&gt;</code> scheme; development builds now use <code>0.3.0-0.0.1.9000</code>.</li>
 <li>Add a MinGW/Rtools-only <code>kalloc.c</code> format-string guard for <code>size_t</code> diagnostics while leaving the non-MinGW upstream code path unchanged.</li>

@@ -11,10 +11,13 @@
 <url><loc>https://sounkou-bioinfo.github.io/Rminibwa/reference/Rminibwa-package.html</loc></url>
 <url><loc>https://sounkou-bioinfo.github.io/Rminibwa/reference/index.html</loc></url>
 <url><loc>https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_align_n.html</loc></url>
+<url><loc>https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_fastx_iter.html</loc></url>
 <url><loc>https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_index_build.html</loc></url>
 <url><loc>https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_index_contigs.html</loc></url>
 <url><loc>https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_index_load.html</loc></url>
 <url><loc>https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_map.html</loc></url>
+<url><loc>https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_map_batch.html</loc></url>
+<url><loc>https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_map_pair_batch.html</loc></url>
 <url><loc>https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_opts.html</loc></url>
 <url><loc>https://sounkou-bioinfo.github.io/Rminibwa/reference/minibwa_available.html</loc></url>
 <url><loc>https://sounkou-bioinfo.github.io/Rminibwa/reference/minibwa_cli.html</loc></url>

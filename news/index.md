@@ -2,6 +2,23 @@
 
 ## Rminibwa 0.3.0-0.0.1.9000
 
+- Add a MinGW/Rtools-only `kthread.c` dead-return guard after
+  `pthread_exit()` to avoid `-Wreturn-type` install warnings on Windows.
+- Make `kseq.h`’s `kroundup64()` width-safe on 32-bit targets such as
+  wasm32, avoiding Emscripten `-Wshift-count-overflow` diagnostics.
+- Add
+  [`mb_map_batch()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_map_batch.md)
+  for native columnar mapping of many query sequences in one call, plus
+  [`mb_map_pair_batch()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_map_pair_batch.md)
+  for explicit two-batch paired-end input.
+- Add native FASTX iterators and
+  [`mb_map_fastx_batch()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_fastx_iter.md)
+  so file-backed batches can be mapped without materializing sequence
+  strings in R.
+- Add a read-level sidecar to alignment batches with read IDs, query
+  lengths, fragment/mate fields, and per-read hit offsets/counts,
+  exposed through ALTREP read columns and the C API.
+- Add a concise print method for native alignment batches.
 - Return
   [`simd_info()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/simd_info.md)
   as a classed `rminibwa_simd_info` object with a concise print method

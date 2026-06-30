@@ -3,9 +3,16 @@
 ## All functions
 
 - [`mb_align_n()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_align_n.md)
+  [`mb_align_read_n()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_align_n.md)
   [`mb_align_col()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_align_n.md)
+  [`mb_align_read_col()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_align_n.md)
   [`mb_align_cigar_words()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_align_n.md)
   : Inspect native minibwa alignment batches
+- [`mb_fastx_iter()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_fastx_iter.md)
+  [`mb_fastx_next()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_fastx_iter.md)
+  [`mb_fastx_n()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_fastx_iter.md)
+  [`mb_map_fastx_batch()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_fastx_iter.md)
+  : Iterate FASTA/FASTQ batches without R sequence materialization
 - [`mb_index_build()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_index_build.md)
   : Build a minibwa index with the native library
 - [`mb_index_contigs()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_index_contigs.md)
@@ -14,6 +21,10 @@
   : Load a native minibwa index
 - [`mb_map()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_map.md)
   : Map raw sequence bytes with native minibwa
+- [`mb_map_batch()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_map_batch.md)
+  : Map a batch of query sequences with native minibwa
+- [`mb_map_pair_batch()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_map_pair_batch.md)
+  : Map paired query sequence batches with native minibwa
 - [`mb_opts()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/mb_opts.md)
   : Native minibwa options
 - [`minibwa_available()`](https://sounkou-bioinfo.github.io/Rminibwa/reference/minibwa_available.md)
