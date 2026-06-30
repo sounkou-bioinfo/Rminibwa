@@ -16,9 +16,9 @@ native C-backed API for in-process alignment work.
 
 The CLI wrappers are kept close to upstream behavior. The native
 interface uses raw query bytes, external-pointer alignment batches,
-ALTREP column views, and a small C header for downstream packages.
-SIMD-sensitive KSW code is compiled as separate staged backends and
-selected at runtime.
+ALTREP alignment/read column views, and a small C header for downstream
+packages. SIMD-sensitive KSW code is compiled as separate staged
+backends and selected at runtime.
 
 ## Installation
 
@@ -57,8 +57,8 @@ aln <- minibwa_map(prefix, "reads.fq.gz", format = "paf", threads = 8)
 ## Native batches
 
 The native path avoids data frames in the hot alignment shape.
-`mb_map()` returns an external-pointer batch; columns are exposed lazily
-to R and can also be read from C.
+`mb_map_batch()` and `mb_map_fastx_batch()` return external-pointer
+batches; columns are exposed lazily to R and can also be read from C.
 
 ``` r
 library(Rminibwa)
@@ -72,17 +72,24 @@ prefix <- file.path(td, "idx")
 
 mb_index_build(fa, prefix, threads = 1L)
 idx <- mb_index_load(prefix)
-aln <- charToRaw(substr(ref, 1L, 100L)) |>
-  mb_map(idx, opt = mb_opts("sr", out_n = 0L), name = charToRaw("read1"))
 
-c(
-  n = mb_align_n(aln),
-  first_tid = mb_align_col(aln, "tid")[[1]],
-  first_qe = mb_align_col(aln, "qe")[[1]],
-  cigar_bytes = length(mb_align_cigar_words(aln))
+starts <- seq(1L, 1600L, by = 25L)
+reads <- vapply(starts, function(i) substr(ref, i, i + 99L), character(1))
+aln <- mb_map_batch(
+  reads,
+  idx,
+  opt = mb_opts("sr", out_n = 0L),
+  name = paste0("read", seq_along(reads))
 )
-#>           n   first_tid    first_qe cigar_bytes 
-#>          51           0         100         204
+
+aln
+#> <rminibwa alignment batch>
+#>   records:     3264
+#>   reads:       64
+#>   hit read ids: 0..63
+#>   first tid:   0
+#>   first qend:  100
+#>   cigar bytes: 13056
 ```
 
 ## C consumers
@@ -99,8 +106,10 @@ SEXP summarize_alignment(SEXP x)
 {
     const RmbAlignBatch *batch = Rminibwa_align_from_sexp(x);
     size_t n = Rminibwa_align_n(batch);
+    size_t n_read = Rminibwa_align_n_read(batch);
+    const int32_t *hit_count = Rminibwa_align_read_i32_col(batch, "hit_count");
     const int32_t *tid = Rminibwa_align_i32_col(batch, "tid");
-    return Rf_ScalarInteger(n && tid ? tid[0] : NA_INTEGER);
+    return Rf_ScalarInteger(n && n_read && hit_count && tid ? tid[0] : NA_INTEGER);
 }
 ```
 

@@ -8,6 +8,7 @@
 #include "rminibwa_internal.h"
 
 static R_altrep_class_t rmb_alt_i32_class;
+static R_altrep_class_t rmb_alt_read_i32_class;
 static R_altrep_class_t rmb_alt_i64_real_class;
 
 static const char *alt_col_name(SEXP x) {
@@ -24,6 +25,10 @@ static RmbAlignBatch *alt_batch(SEXP x) {
 
 static R_xlen_t alt_length(SEXP x) {
     return (R_xlen_t) alt_batch(x)->n;
+}
+
+static R_xlen_t alt_read_length(SEXP x) {
+    return (R_xlen_t) alt_batch(x)->n_reads;
 }
 
 static int alt_i32_elt(SEXP x, R_xlen_t i) {
@@ -48,6 +53,25 @@ static R_xlen_t alt_i32_region(SEXP x, R_xlen_t i, R_xlen_t n, int *buf) {
 static int alt_i32_no_na(SEXP x) {
     (void) x;
     return 1;
+}
+
+static int alt_read_i32_elt(SEXP x, R_xlen_t i) {
+    RmbAlignBatch *batch = alt_batch(x);
+    const int32_t *col = Rminibwa_align_read_i32_col(batch, alt_col_name(x));
+    if (col == NULL) Rf_error("unknown integer read column: %s", alt_col_name(x));
+    if (i < 0 || (size_t) i >= batch->n_reads) return NA_INTEGER;
+    return col[i];
+}
+
+static R_xlen_t alt_read_i32_region(SEXP x, R_xlen_t i, R_xlen_t n, int *buf) {
+    RmbAlignBatch *batch = alt_batch(x);
+    const int32_t *col = Rminibwa_align_read_i32_col(batch, alt_col_name(x));
+    if (col == NULL) Rf_error("unknown integer read column: %s", alt_col_name(x));
+    if (i < 0 || n <= 0 || (size_t) i >= batch->n_reads) return 0;
+    size_t avail = batch->n_reads - (size_t) i;
+    size_t take = (size_t) n < avail ? (size_t) n : avail;
+    memcpy(buf, col + i, take * sizeof(int));
+    return (R_xlen_t) take;
 }
 
 static double alt_i64_real_elt(SEXP x, R_xlen_t i) {
@@ -84,6 +108,16 @@ SEXP rminibwa_align_altinteger(SEXP batch_xptr, const char *name) {
     return out;
 }
 
+SEXP rminibwa_align_read_altinteger(SEXP batch_xptr, const char *name) {
+    if (Rminibwa_align_read_i32_col(rminibwa_align_mut_from_sexp(batch_xptr), name) == NULL) {
+        Rf_error("unknown integer read column: %s", name);
+    }
+    SEXP name_x = PROTECT(Rf_mkString(name));
+    SEXP out = R_new_altrep(rmb_alt_read_i32_class, batch_xptr, name_x);
+    UNPROTECT(1);
+    return out;
+}
+
 SEXP rminibwa_align_altreal(SEXP batch_xptr, const char *name) {
     if (Rminibwa_align_i64_col(rminibwa_align_mut_from_sexp(batch_xptr), name) == NULL) {
         Rf_error("unknown int64 alignment column: %s", name);
@@ -100,6 +134,12 @@ void rminibwa_init_altrep(DllInfo *dll) {
     R_set_altinteger_Elt_method(rmb_alt_i32_class, alt_i32_elt);
     R_set_altinteger_Get_region_method(rmb_alt_i32_class, alt_i32_region);
     R_set_altinteger_No_NA_method(rmb_alt_i32_class, alt_i32_no_na);
+
+    rmb_alt_read_i32_class = R_make_altinteger_class("rminibwa_align_read_i32", "Rminibwa", dll);
+    R_set_altrep_Length_method(rmb_alt_read_i32_class, alt_read_length);
+    R_set_altinteger_Elt_method(rmb_alt_read_i32_class, alt_read_i32_elt);
+    R_set_altinteger_Get_region_method(rmb_alt_read_i32_class, alt_read_i32_region);
+    R_set_altinteger_No_NA_method(rmb_alt_read_i32_class, alt_i32_no_na);
 
     rmb_alt_i64_real_class = R_make_altreal_class("rminibwa_align_i64_real", "Rminibwa", dll);
     R_set_altrep_Length_method(rmb_alt_i64_real_class, alt_length);

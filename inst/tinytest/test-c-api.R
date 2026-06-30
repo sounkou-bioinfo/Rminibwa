@@ -34,8 +34,9 @@ local({
   } else {
     summary <- ffi$rminibwa_capi_summary(aln)
     expect_equal(summary[[1]], as.integer(mb_align_n(aln)))
-    expect_equal(summary[[2]], 0L)
-    expect_true(summary[[3]] > 0L)
-    expect_true(summary[[4]] > 0L)
+    expect_equal(summary[[2]], as.integer(mb_align_read_n(aln)))
+    expect_equal(summary[[3]], mb_align_read_col(aln, "length")[[1]])
+    expect_equal(summary[[4]], 0L)
+    expect_true(summary[[5]] > 0L)
   }
 })

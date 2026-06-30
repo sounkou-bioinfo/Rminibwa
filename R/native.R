@@ -115,6 +115,153 @@ mb_map <- function(x, index, opt = mb_opts(), name = NULL, meth = c("none", "c2t
   .Call(RC_mb_map_raw, x, index, opt, name, meth)
 }
 
+#' Map a batch of query sequences with native minibwa
+#'
+#' `mb_map_batch()` maps many reads in one native call and returns the same
+#' columnar alignment-batch object as `mb_map()`. Input may be a character
+#' vector of sequence bytes or a list whose elements are raw vectors or
+#' character scalars. Unlike the CLI reader, this direct batch API defaults to
+#' unpaired mapping unless `opt = mb_opts(paired = TRUE)`. In paired mode, order
+#' records as `R1, R2, R1, R2, ...`; this call pairs adjacent records and does
+#' not group FASTQ records by name for you.
+#'
+#' @param x Character vector or list of raw vectors / character scalars.
+#' @inheritParams mb_map
+#' @param name Optional character vector of read names, or a list of raw vectors
+#'   / character scalars. If supplied, it must have the same length as `x`.
+#' @return A native alignment batch external pointer.
+#' @export
+mb_map_batch <- function(x, index, opt = mb_opts(), name = NULL) {
+  if (!(is.character(x) || is.list(x)) || !length(x) || anyNA(x)) {
+    stop("x must be a non-empty character vector or list of raw/character sequences", call. = FALSE)
+  }
+  if (!is.null(name)) {
+    if (!(is.character(name) || is.list(name)) || length(name) != length(x) || anyNA(name)) {
+      stop("name must be NULL or a character/list vector with the same length as x", call. = FALSE)
+    }
+  }
+  .Call(RC_mb_map_batch, x, index, opt, name)
+}
+
+#' Map paired query sequence batches with native minibwa
+#'
+#' `mb_map_pair_batch()` is the explicit two-batch paired-end interface. `r1[i]`
+#' and `r2[i]` are flattened as adjacent records before mapping, matching the
+#' two-file CLI layout. The read sidecar records `fragment_id` and `mate`.
+#'
+#' @param r1,r2 Character vectors or lists of raw vectors / character scalars.
+#'   They must have the same non-zero length.
+#' @inheritParams mb_map_batch
+#' @param name1,name2 Optional read-name vectors for `r1` and `r2`.
+#' @return A native alignment batch external pointer.
+#' @export
+mb_map_pair_batch <- function(r1, r2, index, opt = mb_opts(), name1 = NULL, name2 = NULL) {
+  if (!(is.character(r1) || is.list(r1)) || !length(r1) || anyNA(r1)) {
+    stop("r1 must be a non-empty character vector or list of raw/character sequences", call. = FALSE)
+  }
+  if (!(is.character(r2) || is.list(r2)) || length(r2) != length(r1) || anyNA(r2)) {
+    stop("r2 must be a character/list vector with the same length as r1", call. = FALSE)
+  }
+  if (is.null(name1) != is.null(name2)) {
+    stop("name1 and name2 must both be NULL or both be supplied", call. = FALSE)
+  }
+  x <- vector("list", 2L * length(r1))
+  x[seq.int(1L, length(x), by = 2L)] <- as.list(r1)
+  x[seq.int(2L, length(x), by = 2L)] <- as.list(r2)
+  name <- NULL
+  if (!is.null(name1)) {
+    if (!(is.character(name1) || is.list(name1)) || length(name1) != length(r1) || anyNA(name1)) {
+      stop("name1 must be NULL or a character/list vector with the same length as r1", call. = FALSE)
+    }
+    if (!(is.character(name2) || is.list(name2)) || length(name2) != length(r2) || anyNA(name2)) {
+      stop("name2 must be NULL or a character/list vector with the same length as r2", call. = FALSE)
+    }
+    name <- vector("list", length(x))
+    name[seq.int(1L, length(name), by = 2L)] <- as.list(name1)
+    name[seq.int(2L, length(name), by = 2L)] <- as.list(name2)
+  }
+  opt$paired <- TRUE
+  mb_map_batch(x, index, opt = opt, name = name)
+}
+
+#' Iterate FASTA/FASTQ batches without R sequence materialization
+#'
+#' `mb_fastx_iter()` opens one FASTA/FASTQ file, or two mate files, using the
+#' vendored minibwa reader. `mb_fastx_next()` returns a native FASTX batch, and
+#' `mb_map_fastx_batch()` maps that batch directly from native sequence buffers.
+#'
+#' Pairing modes follow the CLI reader shape: `"none"` treats each record as a
+#' fragment, `"by_name"` groups adjacent records in one file with matching query
+#' names, and `"two_file"` reads one record from each of two files per fragment.
+#' `"auto"` selects `"two_file"` for two paths and `"none"` for one path.
+#'
+#' @param path One FASTA/FASTQ path, or two paths for `paired = "two_file"`.
+#' @param paired Pairing mode.
+#' @param batch_bases Approximate number of sequence bases to read per batch.
+#' @param max_batch_bases Maximum bases to read when extending a batch to keep a
+#'   short paired fragment together.
+#' @param with_qual,with_comment Preserve qualities/comments in the native batch.
+#' @return `mb_fastx_iter()` returns a native iterator. `mb_fastx_next()` returns
+#'   a native FASTX batch or `NULL` at EOF. `mb_fastx_n()` returns the number of
+#'   records in a FASTX batch. `mb_map_fastx_batch()` returns a native alignment
+#'   batch.
+#' @export
+mb_fastx_iter <- function(path,
+                          paired = c("auto", "none", "by_name", "two_file"),
+                          batch_bases = 100000000L,
+                          max_batch_bases = batch_bases,
+                          with_qual = FALSE,
+                          with_comment = FALSE) {
+  if (!is.character(path) || !length(path) || length(path) > 2L || anyNA(path) || any(!nzchar(path))) {
+    stop("path must be a non-empty character vector of length one or two", call. = FALSE)
+  }
+  paired <- match.arg(paired)
+  if (paired == "auto") paired <- if (length(path) == 2L) "two_file" else "none"
+  if (paired == "two_file" && length(path) != 2L) stop("paired = 'two_file' requires two paths", call. = FALSE)
+  if (paired != "two_file" && length(path) != 1L) stop("single-file pairing modes require one path", call. = FALSE)
+  path <- normalizePath(path, winslash = "/", mustWork = TRUE)
+  batch_bases <- rmb_positive_int_scalar(batch_bases, "batch_bases")
+  max_batch_bases <- rmb_positive_int_scalar(max_batch_bases, "max_batch_bases")
+  with_qual <- rmb_logical_scalar(with_qual, "with_qual")
+  with_comment <- rmb_logical_scalar(with_comment, "with_comment")
+  mode <- match(paired, c("none", "by_name", "two_file")) - 1L
+  .Call(RC_mb_fastx_iter, path, mode, batch_bases, max_batch_bases, with_qual, with_comment)
+}
+
+#' @rdname mb_fastx_iter
+#' @param iter Native FASTX iterator returned by `mb_fastx_iter()`.
+#' @export
+mb_fastx_next <- function(iter) {
+  .Call(RC_mb_fastx_next, iter)
+}
+
+#' @rdname mb_fastx_iter
+#' @param batch Native FASTX batch returned by `mb_fastx_next()`.
+#' @export
+mb_fastx_n <- function(batch) {
+  .Call(RC_mb_fastx_n, batch)
+}
+
+#' @rdname mb_fastx_iter
+#' @inheritParams mb_map
+#' @export
+mb_map_fastx_batch <- function(batch, index, opt = mb_opts()) {
+  .Call(RC_mb_map_fastx_batch, batch, index, opt)
+}
+
+#' @export
+print.rminibwa_fastx_iter <- function(x, ...) {
+  cat("<rminibwa FASTX iterator>\n")
+  invisible(x)
+}
+
+#' @export
+print.rminibwa_fastx_batch <- function(x, ...) {
+  cat("<rminibwa FASTX batch>\n")
+  cat("  records: ", mb_fastx_n(x), "\n", sep = "")
+  invisible(x)
+}
+
 # Internal count-only mapper used to keep developer benchmarks honest.
 mb_map_count <- function(x, index, opt = mb_opts(), name = NULL, meth = c("none", "c2t", "g2a")) {
   if (!is.raw(x)) stop("x must be a raw vector of sequence bytes", call. = FALSE)
@@ -128,17 +275,31 @@ mb_map_count <- function(x, index, opt = mb_opts(), name = NULL, meth = c("none"
 #' Inspect native minibwa alignment batches
 #'
 #' `mb_align_col()` returns ALTREP views over native alignment columns. These
-#' views do not copy columns unless R forces materialization. C consumers should
-#' prefer the installed `Rminibwa.h` API.
+#' views do not copy columns unless R forces materialization. `mb_align_read_col()`
+#' returns ALTREP views over the read-level sidecar with one row per input read,
+#' including reads without hits. C consumers should prefer the installed
+#' `Rminibwa.h` API.
 #'
-#' @param x Native alignment batch returned by `mb_map()`.
-#' @param name Column name.
-#' @return `mb_align_n()` returns the number of records. `mb_align_col()` returns
-#'   an ALTREP integer or real vector. `mb_align_cigar_words()` returns a raw
-#'   debug copy of packed minibwa CIGAR words.
+#' @param x Native alignment batch returned by `mb_map()` or `mb_map_batch()`.
+#' @param name Column name. Alignment columns include `read_id`, `tid`, `qlen`,
+#'   `qs`, `qe`, `tlen`, `ts`, `te`, `strand`, `mapq`, `score`, `matches`,
+#'   `blen`, `flags`, `n_sub`, `cigar_offset`, and `cigar_n`. Read-sidecar
+#'   columns include `read_id`, `length`, `fragment_id`, `mate`, `hit_offset`,
+#'   and `hit_count`.
+#' @return `mb_align_n()` returns the number of alignment records.
+#'   `mb_align_read_n()` returns the number of input reads represented in the
+#'   batch. `mb_align_col()` and `mb_align_read_col()` return ALTREP integer or
+#'   real vectors. `mb_align_cigar_words()` returns a raw debug copy of packed
+#'   minibwa CIGAR words.
 #' @export
 mb_align_n <- function(x) {
   .Call(RC_mb_align_n, x)
+}
+
+#' @rdname mb_align_n
+#' @export
+mb_align_read_n <- function(x) {
+  .Call(RC_mb_align_read_n, x)
 }
 
 #' @rdname mb_align_n
@@ -152,8 +313,34 @@ mb_align_col <- function(x, name) {
 
 #' @rdname mb_align_n
 #' @export
+mb_align_read_col <- function(x, name) {
+  if (!is.character(name) || length(name) != 1L || is.na(name)) {
+    stop("name must be a non-missing character scalar", call. = FALSE)
+  }
+  .Call(RC_mb_align_read_col, x, name)
+}
+
+#' @rdname mb_align_n
+#' @export
 mb_align_cigar_words <- function(x) {
   .Call(RC_mb_align_cigar_words, x)
+}
+
+#' @export
+print.rminibwa_align <- function(x, ...) {
+  n <- mb_align_n(x)
+  n_read <- mb_align_read_n(x)
+  cat("<rminibwa alignment batch>\n")
+  cat("  records:     ", n, "\n", sep = "")
+  cat("  reads:       ", n_read, "\n", sep = "")
+  if (n > 0) {
+    read_id <- mb_align_col(x, "read_id")
+    cat("  hit read ids: ", read_id[[1]], "..", read_id[[n]], "\n", sep = "")
+    cat("  first tid:   ", mb_align_col(x, "tid")[[1]], "\n", sep = "")
+    cat("  first qend:  ", mb_align_col(x, "qe")[[1]], "\n", sep = "")
+  }
+  cat("  cigar bytes: ", length(mb_align_cigar_words(x)), "\n", sep = "")
+  invisible(x)
 }
 
 #' Select the runtime SIMD backend

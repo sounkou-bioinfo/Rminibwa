@@ -6,16 +6,48 @@
 #include <Rinternals.h>
 
 #include "vendor/minibwa/minibwa.h"
+#include "vendor/minibwa/bseq.h"
 #include "Rminibwa.h"
+
+typedef struct RmbFastxIter RmbFastxIter;
+typedef struct RmbFastxBatch RmbFastxBatch;
 
 struct RmbIndex {
     mb_idx_t *ptr;
     int meth;
 };
 
+struct RmbFastxIter {
+    int n_fp;
+    mb_bseq_file_t **fp;
+    int64_t chunk_size;
+    int64_t max_chunk_size;
+    int with_qual;
+    int with_comment;
+    int paired;
+    int64_t next_read_id;
+    int64_t next_fragment_id;
+};
+
+struct RmbFastxBatch {
+    int32_t n;
+    int paired;
+    mb_bseq1_t *seq;
+    int32_t *read_id;
+    int32_t *fragment_id;
+    int32_t *mate;
+};
+
 struct RmbAlignBatch {
     size_t n;
+    size_t n_reads;
     SEXP index_ref;
+    int32_t *read_index;
+    int32_t *read_length;
+    int32_t *read_fragment_id;
+    int32_t *read_mate;
+    int32_t *read_hit_offset;
+    int32_t *read_hit_count;
     int32_t *read_id;
     int32_t *target_id;
     int32_t *query_length;
@@ -39,6 +71,7 @@ struct RmbAlignBatch {
 
 void rminibwa_init_altrep(DllInfo *dll);
 SEXP rminibwa_align_altinteger(SEXP batch_xptr, const char *name);
+SEXP rminibwa_align_read_altinteger(SEXP batch_xptr, const char *name);
 SEXP rminibwa_align_altreal(SEXP batch_xptr, const char *name);
 SEXP rminibwa_align_cigar_raw(SEXP batch_xptr);
 

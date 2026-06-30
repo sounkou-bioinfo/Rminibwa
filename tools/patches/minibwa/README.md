@@ -29,3 +29,8 @@ small and source-compatible with that exact commit. When bumping upstream:
 - `0004-fix-mingw-kalloc-size-t-format.patch`: use a MinGW/Rtools-only
   `size_t` format string in `km_stat_print()`; other platforms keep the
   upstream code path unchanged.
+- `0005-fix-mingw-kthread-worker-return-warning.patch`: add MinGW/Rtools-only
+  dead fallback returns after `pthread_exit()` in `kthread.c` worker functions
+  to satisfy GCC's `-Wreturn-type` analysis.
+- `0006-make-kseq-roundup-width-safe.patch`: make `kseq.h`'s `kroundup64()`
+  final shift width-safe on 32-bit targets such as wasm32.

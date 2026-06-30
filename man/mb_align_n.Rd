@@ -2,28 +2,42 @@
 % Please edit documentation in R/native.R
 \name{mb_align_n}
 \alias{mb_align_n}
+\alias{mb_align_read_n}
 \alias{mb_align_col}
+\alias{mb_align_read_col}
 \alias{mb_align_cigar_words}
 \title{Inspect native minibwa alignment batches}
 \usage{
 mb_align_n(x)
 
+mb_align_read_n(x)
+
 mb_align_col(x, name)
+
+mb_align_read_col(x, name)
 
 mb_align_cigar_words(x)
 }
 \arguments{
-\item{x}{Native alignment batch returned by \code{mb_map()}.}
+\item{x}{Native alignment batch returned by \code{mb_map()} or \code{mb_map_batch()}.}
 
-\item{name}{Column name.}
+\item{name}{Column name. Alignment columns include \code{read_id}, \code{tid}, \code{qlen},
+\code{qs}, \code{qe}, \code{tlen}, \code{ts}, \code{te}, \code{strand}, \code{mapq}, \code{score}, \code{matches},
+\code{blen}, \code{flags}, \code{n_sub}, \code{cigar_offset}, and \code{cigar_n}. Read-sidecar
+columns include \code{read_id}, \code{length}, \code{fragment_id}, \code{mate}, \code{hit_offset},
+and \code{hit_count}.}
 }
 \value{
-\code{mb_align_n()} returns the number of records. \code{mb_align_col()} returns
-an ALTREP integer or real vector. \code{mb_align_cigar_words()} returns a raw
-debug copy of packed minibwa CIGAR words.
+\code{mb_align_n()} returns the number of alignment records.
+\code{mb_align_read_n()} returns the number of input reads represented in the
+batch. \code{mb_align_col()} and \code{mb_align_read_col()} return ALTREP integer or
+real vectors. \code{mb_align_cigar_words()} returns a raw debug copy of packed
+minibwa CIGAR words.
 }
 \description{
 \code{mb_align_col()} returns ALTREP views over native alignment columns. These
-views do not copy columns unless R forces materialization. C consumers should
-prefer the installed \code{Rminibwa.h} API.
+views do not copy columns unless R forces materialization. \code{mb_align_read_col()}
+returns ALTREP views over the read-level sidecar with one row per input read,
+including reads without hits. C consumers should prefer the installed
+\code{Rminibwa.h} API.
 }
